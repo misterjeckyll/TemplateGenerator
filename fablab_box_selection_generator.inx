@@ -13,6 +13,7 @@
             <param name="path_id" type="string" _gui-text="ID svg de la boite (prefixe))">box</param>
             <param name="height" type="float" precision="2" min="0" max="9999999"  _gui-text="Hauteur (mm)">50.00</param>
             <param name="thickness" type="float" precision="2" min="0" max="9999999"  _gui-text="Epaisseur du matériau (mm)">3.00</param>
+            <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches (mm)">10.00</param>
             <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (mm)">0.1</param>
             <!-- Top edge type -->
             <param name="top" type="enum" gui-text="Bord supérieur" gui-description="edge type for top edge">
