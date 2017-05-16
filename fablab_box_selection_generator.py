@@ -8,16 +8,14 @@ import sys
 sys.path.append('/usr/share/inkscape/extensions')
 
 # We will use the inkex module with the predefined Effect base class.
-import inkex
+import inkex,simplepath
 # The simplestyle module provides functions for style parsing.
 from simplestyle import *
-import simplepath
-
 from fablab_lib import BaseEffect
 from fablab_box_lib import BoxEffect
 
 #----------------------------------------------------------------#
-### Utility functions
+# Utility functions
 #----------------------------------------------------------------#
 
 def print_(*arg):
@@ -29,7 +27,7 @@ def print_(*arg):
     f.close()
 
 #----------------------------------------------------------------#
-### Box generator class
+# Box generator class
 #----------------------------------------------------------------#
 class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
 
@@ -45,49 +43,58 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         self.OptionParser.add_option('--height',        action='store',type='float',    dest='height',      default=50,     help='Hauteur de la boite')
         self.OptionParser.add_option('--thickness',     action='store',type='float',    dest='thickness',   default=3,      help='Epaisseur du materiau')
         self.OptionParser.add_option('--backlash',      action='store',type='float',    dest='backlash',    default=0.1,    help='Matière enlevé par le laser')
-        self.OptionParser.add_option('--top',           action="store",type='string',   dest='top',         default='e',    help='top edge')
+        self.OptionParser.add_option('--type',          action="store",type='string',   dest='type',        default='e',    help='type de boite')
         self.OptionParser.add_option('--tab_size',      action='store',type='float',    dest='tab_size',    default=10,     help='Tab size')
         self.OptionParser.add_option("", "--active-tab",action="store",type="string",   dest="active_tab",  default='title',help="Active tab.")
         self.start_stop = {}
 
 # ------------------------------------------------------------------#
-### Main function called when the extension is run.
+# Main function called when the extension is run.
 # ------------------------------------------------------------------#
     def effect(self):
-        """ Calculate Box cutting path from selection and options
+        """ Generate Box cutting path from selection and options
         """
-        ### Global params - Debug
+        ### Global params
         parent = self.current_layer
         centre = self.view_center
         fgcolor = "#FF0000"
         bgcolor = None
-        choices = ['e', 'c', 'E', 'S', 'i', 'k', 'v', 'f', 'L']
         width, depth = 0,0
+        height = self.options.height
+        document_height = self.unittouu(self.document.getroot().get('height'))
 
-        inkex.debug("-- %s -- %s --" % (centre[0], centre[1]))
-        inkex.debug(self.options)
-
-        ### Gather incoming params from options and selection
-
+        ### Gather incoming params from selection
+        segment_pos = {'V':[],'H':[]}
         for id,node in self.selected.iteritems():
             if node.tag == inkex.addNS('rect','svg'):
-                width = node.get('height')
-                depth = node.get('width')
-                inkex.debug("largeur: %s - profondeur: %s"%(width,depth))
-            else:
-                inkex.debug(node)
-        height = self.options.height
-        if(width==0 and depth == 0):
+                # Get selected rectangle info
+                x_pos = float(node.get('x'))
+                y_pos  = float(node.get('y'))
+                depth = float(node.get('height'))
+                width = float(node.get('width'))
+            elif node.tag == inkex.addNS('path','svg'):
+                # Gather the selected segment position in a dictionnary
+                pathrepr = node.get('d').replace(',',' ').split()
+                segment_pos['V'].append(float(pathrepr[1])) if 'V' in pathrepr else None
+                segment_pos['H'].append(float(pathrepr[2])) if 'H' in pathrepr else None
+
+        if(width==0 or depth == 0):# exit if no rectangle selected
             inkex.debug("Aucun rectangle trouvé dans la selection")
+            exit()
 
-        if(True):
-            for shape in self.box_with_top(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash):
-                inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)
-        else:
-            for shape in self.box_without_top(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash):
-                inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)
+        ### Build a dictionary of the offset of each segment selected
+        segment_offset = {'V':[],'H':[]}
+        [[segment_offset[key].append(-y_pos-position)if key=='H' else segment_offset[key].append(position-x_pos-width)] for key,elt_list in segment_pos.iteritems() for position in elt_list ]
+        #inkex.debug(segment_offset)
 
-        #inkex.etree.SubElement(parent, inkex.addNS('path','svg'), ell_attribs )
+        ### Switch statemetn to decide wich type of box to generate
+        switch = {
+            'f':self.box_selection_with_top(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset),
+            'o':self.box_selection_without_top(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset)
+        }
+
+        for shape in  switch[self.options.type]:
+            inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)
 
 if __name__ == '__main__':
     effect = BoxSelectionGeneratorEffect()

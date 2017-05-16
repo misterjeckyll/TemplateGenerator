@@ -16,21 +16,22 @@
             <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches (mm)">10.00</param>
             <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (mm)">0.1</param>
             <!-- Top edge type -->
-            <param name="top" type="enum" gui-text="Bord supérieur" gui-description="edge type for top edge">
-                <item value="e">e Straight Edge</item>
-                <item value="c">c Click on (bottom side)</item>
-                <item value="E">E Straight Edge (outset by thickness)</item>
-                <item value="S">S Stackable (top)</item>
-                <item value="i">i Straight edge with hinge eye</item>
-                <item value="k">k Straight edge with hinge eye (both ends)</item>
-                <item value="v">v Edge with cabinet hinges</item>
-                <item value="f">f Finger Joint</item>
-                <item value="L">L Edge for slide on lid</item>
+            <param name="type" type="enum" gui-text="Bord supérieur" gui-description="Type de boite">
+                <item value="o">Boite ouverte</item>
+                <item value="oe">Boite ouverte empilable</item>
+                <item value="oc">Boite ouverte avec couvercle</item>
+                <item value="occ">Boite ouverte avec couvercle coulissant</item>
+                <item value="f">Boite fermée</item>
+                <item value="fe">Boite fermée empilable</item>
             </param>
         </page>
         <!-- Help page -->
         <page name="help" _gui-text="Aide">
-            <param name="help" type="description" xml:space="preserve">Aide d'utilisation de l'extensions</params>
+            <param name="help" type="description" xml:space="preserve">Cet utilitaire permet de générer le plan svg
+d'une boite à encoche, à partir d'une sélection:
+- Un rectangle défini la largeur et la profondeur de la boite
+- Pour chaque ligne droite croisant le rectangle un élément intercalaire est créé
+            </params>
         </page>
     </param>
 
