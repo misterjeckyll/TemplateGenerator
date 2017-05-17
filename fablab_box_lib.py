@@ -2,7 +2,9 @@
 import math
 import inkex
 import simplestyle
-
+#------------------------------------------------------------------#
+# Exception handling
+#------------------------------------------------------------------#
 class BoxGenrationError(Exception):
 
     def __init__(self, value):
@@ -13,7 +15,70 @@ class BoxGenrationError(Exception):
 
 
 class BoxEffect():
+# ------------------------------------------------------------------#
+# Path formating and utility functions
+# ------------------------------------------------------------------#
+    def _rotate_path(self, points, direction):
+        if direction == 1:
+            return [[-point[1], point[0]] for point in points]
 
+        elif direction == 2:
+            return [[-point[0], -point[1]] for point in points]
+
+        elif direction == 3:
+            return [[point[1], -point[0]] for point in points]
+        else:
+            return points
+
+    def mm2u(self, arr):
+        '''
+        Translate a value or an array of values form 'mm' to document unit
+        '''
+        if type(arr) is list:
+            return [self.mm2u(coord) for coord in arr]
+        else:
+            try:# for 0.48 and 0.91 compatibility
+                return inkex.unittouu("%smm" % arr)
+            except AttributeError:
+                return self.unittouu("%smm" % arr)
+
+    def toPathString(self, arr, end=" z"):
+        return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), end)
+
+    def getPath(self, path, path_id, _x, _y, bg, fg):
+
+        style = ''
+        if(bg):
+            style += "fill:%s;" % bg
+        else:
+            style += "fill:none;"
+        if(fg):
+            style += "stroke:%s;" % fg
+        return {
+            'style': style,
+            'id': path_id,
+            'transform': "translate(%s,%s)" % (_x, _y),
+            'd': path
+        }
+# ------------------------------------------------------------------#
+# Hole for tabbed paths
+# ------------------------------------------------------------------#
+    def holes(self,length, tab_width,thickness,direction=0,backlash=0):
+
+        ### Calcultate tab size and number
+        nb_tabs = math.floor(length / tab_width)
+        nb_tabs = int(nb_tabs - 1 + (nb_tabs % 2))
+        tab_real_width = length / nb_tabs
+        # Check if no inconsistency on tab size and number
+        if (tab_real_width <= thickness * 1.5):
+            raise BoxGenrationError("Attention les encoches resultantes (%s mm) ne sont pas assez larges au vue de l'epasseur de votre materiaux. Merci d'utiliser une taille d'encoches coherente avec votre boite" % tab_real_width)
+
+        inkex.debug("Pour une largeur de %s et des encoches de %s => Nombre d'encoches : %s Largeur d'encoche : %s" % (length, tab_width, nb_tabs, tab_real_width))
+        points = []
+        return points
+# ------------------------------------------------------------------#
+# Tabbed paths
+# ------------------------------------------------------------------#
     def tabs(self, length, tab_width, thickness, direction=0, **args):
         '''
              * Genere les elements d'un polygone
@@ -83,45 +148,9 @@ class BoxEffect():
 
         return points
 
-    def _rotate_path(self, points, direction):
-        if direction == 1:
-            return [[-point[1], point[0]] for point in points]
-
-        elif direction == 2:
-            return [[-point[0], -point[1]] for point in points]
-
-        elif direction == 3:
-            return [[point[1], -point[0]] for point in points]
-        else:
-            return points
-
-    def mm2u(self, arr):
-        '''
-        Translate a value or an array of values form 'mm' to document unit
-        '''
-        if type(arr) is list:
-            return [self.mm2u(coord) for coord in arr]
-        else:
-            return self.unittouu("%smm" % arr)
-
-    def toPathString(self, arr, end=" z"):
-        return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), end)
-
-    def getPath(self, path, path_id, _x, _y, bg, fg):
-        style = ''
-        if(bg):
-            style += "fill:%s;" % bg
-        else:
-            style += "fill:none;"
-        if(fg):
-            style += "stroke:%s;" % fg
-        return {
-            'style': style,
-            'id': path_id,
-            'transform': "translate(%s,%s)" % (_x, _y),
-            'd': path
-        }
-
+# ------------------------------------------------------------------#
+# Shape of each box pieces
+# ------------------------------------------------------------------#
     def _bottom(self, width, depth, tab_width, thickness, backlash):
         # print("_bottom")
         points = [[0, 0]]
@@ -185,8 +214,10 @@ class BoxEffect():
                                   prefix, _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))), '%s_right_side' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
         return paths
-
-    def box_selection_without_top(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset):
+#------------------------------------------------------------------#
+# Shapes of selected type of box
+#------------------------------------------------------------------#
+    def box_selection(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,closed):
         """
         draw a box pattern with internal part or not 
         :param segment_offset: {'H':[y_offset_horizontal_segment1,y_offset_horizontal_segment2,ect],'V':[x_offset_vertical_segment1,ect]}
@@ -194,6 +225,9 @@ class BoxEffect():
         """
         ### Draw the 4 side of the box
         paths = []
+        if closed:
+            paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),
+                             '%s_top' % prefix, _x + self.mm2u(2 * thickness + width), _y + self.mm2u(1 * thickness),bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(1 * thickness),_y + self.mm2u(1 * thickness), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_font' % prefix,_x + self.mm2u(2 * thickness + width),_y + self.mm2u(2 * thickness + depth), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_back' % prefix,_x + self.mm2u(1 * thickness),_y + self.mm2u(2 * thickness + depth), bg, fg))
@@ -203,29 +237,29 @@ class BoxEffect():
         ### Draw internal layer shape
 
         for i,Horizontal_layer in enumerate(segment_offset['H']):#For each horizontal piece -> draw piece
+            paths.append(self.getPath(self.toPathString(self.mm2u(self.holes(depth,tab_size,thickness,0,backlash))),
+                                      '%s_H_finger_Hole_%s'%(prefix,i),
+                                      _x,
+                                      _y,bg,fg))
             paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(width,height,tab_size,thickness,backlash))),
                                       '%s_Horizontal_layer_%s' % (prefix,i),
                                       _x + self.mm2u(thickness - width),
-                                      _y + self.mm2u(2*thickness + 2*depth + i*height), bg,fg))
+                                      _y + self.mm2u(thickness + 3*depth + i*height), bg,fg))
             for offset in segment_offset['V']:#for each perpendicular piece -> draw matching rectangle
                 paths.append(self.getPath(self.toPathString(self.mm2u([[0,0],[thickness,0],[0,(height-thickness)/2],[-thickness,0]])),
                                           '%s_Horizontal_offset_rect_%s' % (prefix,i),
                                           _x + self.mm2u(offset-width-thickness/2),
-                                          _y + self.mm2u(2 * thickness + 2*depth + i*height), bg,fg))
+                                          _y + self.mm2u(thickness + 3*depth + i*height), bg,fg))
         for i,vertical_layer in enumerate(segment_offset['V']):
             paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(depth,height,tab_size,thickness,backlash))),
                                       '%s_Vertical_layer_%s' % (prefix,i),
-                                      _x + self.mm2u(1 * thickness),
-                                      _y + self.mm2u(2 * thickness + 2*depth + i*height), bg, fg))
+                                      _x + self.mm2u(2 * thickness),
+                                      _y + self.mm2u(thickness + 3*depth + i*height), bg, fg))
             for offset in segment_offset['H']:
                 paths.append(self.getPath(self.toPathString(self.mm2u([[0,0],[thickness,0],[0,(height-thickness)/2],[-thickness,0]])),
                                           '%s_Vertical_offset_rect_%s' % (prefix,i),
-                                          _x + self.mm2u(offset-thickness/2),
-                                          _y + self.mm2u(2 * thickness + 2*depth + i*height+(height-thickness)/2), bg,fg))
-        return paths
-    def box_selection_with_top(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset):
-        paths = []
-
+                                          _x + self.mm2u(2*thickness+offset-thickness/2),
+                                          _y + self.mm2u(thickness + 3*depth + i*height+(height-thickness)/2), bg,fg))
         return paths
 
     def _layer(self,width, height, tab_width, thickness, backlash):

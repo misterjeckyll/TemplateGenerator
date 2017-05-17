@@ -14,7 +14,7 @@
             <param name="height" type="float" precision="2" min="0" max="9999999"  _gui-text="Hauteur (mm)">50.00</param>
             <param name="thickness" type="float" precision="2" min="0" max="9999999"  _gui-text="Epaisseur du matériau (mm)">3.00</param>
             <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches (mm)">10.00</param>
-            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (mm)(~0.1)">0.1</param>
+            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (~0.1mm)">0.1</param>
             <!-- Top edge type -->
             <param name="type" type="enum" gui-text="Type de Boite" gui-description="Type de boite">
                 <item value="o">Boite ouverte</item>
@@ -25,12 +25,30 @@
                 <item value="fe">Boite fermée empilable</item>
             </param>
         </page>
+        <!-- Info page-->
+        <page name="info" _gui-text="Avancé">
+            <param name="info" type="description" xml:space="preserve">
+Matière enlevé par le laser:
+
+- Dépend du matériau et du laser, ajuste le jeu entre les assemblages
+
+Taille des encoches :
+
+-Donne une piece sans enchoches si la valeur est trop petite
+
+Selection :
+
+-Un rectangle indique les dimensions extérieures de la boite
+-La fenetre alignement et distribution permet de placer les segments intercalaire à interval régulier
+
+            </param>
+        </page>
         <!-- Help page -->
         <page name="help" _gui-text="Aide">
-            <param name="help" type="description" xml:space="preserve">Cet utilitaire permet de générer le chemin
-d'une boite à encoche, à partir d'une sélection:
-- Un rectangle donne la largeur et la profondeur de la boite(vue du dessus)
-- Une cloison interne est créé pour toute ligne droite croisant le rectangle
+            <param name="help" type="description" xml:space="preserve">Cet utilitaire génére le chemin
+d'une boite à encoche à partir d'une sélection pour la découpe laser:
+- Un rectangle donne la largeur et la profondeur de la boite
+- Une cloison interne pour toute ligne droite croisant le rectangle
 
 Exemple d'utilisation :
 1) Tracer un rectangle avec l'outil rectangle (f4)

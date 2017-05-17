@@ -52,7 +52,7 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
 # Main function called when the extension is run.
 #------------------------------------------------------------------#
     def effect(self):
-        """ Generate Box cutting path from selection and options
+        """ Generate lasercut ready Boxe paths from selection and options
         """
         ### Global params
         parent = self.current_layer
@@ -85,14 +85,15 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         ### Build a dictionary of the offset of each segment selected
         segment_offset = {'V':[],'H':[]}
         [[segment_offset[key].append(position-y_pos)if key=='H' else segment_offset[key].append(position-x_pos)] for key,elt_list in segment_pos.iteritems() for position in elt_list ]
-        inkex.debug(segment_offset)
+        #inkex.debug(segment_offset)
 
         ### Switch statemetn to decide wich type of box to generate
         switch = {
-            'f':self.box_selection_with_top(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset),
-            'o':self.box_selection_without_top(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset)
+            'f':self.box_selection(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,closed=True),
+            'o':self.box_selection(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,closed=False)
         }
         for shape in switch[self.options.type]:
+            inkex.debug(shape)
             inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)
 
 if __name__ == '__main__':
