@@ -48,9 +48,9 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         self.OptionParser.add_option("", "--active-tab",action="store",type="string",   dest="active_tab",  default='title',help="Active tab.")
         self.start_stop = {}
 
-# ------------------------------------------------------------------#
+#------------------------------------------------------------------#
 # Main function called when the extension is run.
-# ------------------------------------------------------------------#
+#------------------------------------------------------------------#
     def effect(self):
         """ Generate Box cutting path from selection and options
         """
@@ -84,16 +84,15 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
 
         ### Build a dictionary of the offset of each segment selected
         segment_offset = {'V':[],'H':[]}
-        [[segment_offset[key].append(-y_pos-position)if key=='H' else segment_offset[key].append(position-x_pos-width)] for key,elt_list in segment_pos.iteritems() for position in elt_list ]
-        #inkex.debug(segment_offset)
+        [[segment_offset[key].append(position-y_pos)if key=='H' else segment_offset[key].append(position-x_pos)] for key,elt_list in segment_pos.iteritems() for position in elt_list ]
+        inkex.debug(segment_offset)
 
         ### Switch statemetn to decide wich type of box to generate
         switch = {
             'f':self.box_selection_with_top(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset),
             'o':self.box_selection_without_top(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset)
         }
-
-        for shape in  switch[self.options.type]:
+        for shape in switch[self.options.type]:
             inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)
 
 if __name__ == '__main__':

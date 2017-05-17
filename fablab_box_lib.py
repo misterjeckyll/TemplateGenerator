@@ -1,6 +1,7 @@
 # encoding: utf-8
 import math
-
+import inkex
+import simplestyle
 
 class BoxGenrationError(Exception):
 
@@ -124,148 +125,44 @@ class BoxEffect():
     def _bottom(self, width, depth, tab_width, thickness, backlash):
         # print("_bottom")
         points = [[0, 0]]
-        points.extend(self.tabs(width, tab_width, thickness,
-                                direction=0,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True
-                                ))
-        points.extend(self.tabs(depth, tab_width, thickness,
-                                direction=1,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True
-                                ))
-        points.extend(self.tabs(width, tab_width, thickness,
-                                direction=2,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True
-                                ))
-        points.extend(self.tabs(depth, tab_width, thickness,
-                                direction=3,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True
-                                ))
+        points.extend(self.tabs(width, tab_width, thickness,direction=0,backlash=backlash,firstUp=True,lastUp=True))
+        points.extend(self.tabs(depth, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True))
+        points.extend(self.tabs(width, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True))
+        points.extend(self.tabs(depth, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True))
         return points
 
     def _front_without_top(self, width, height, tab_width, thickness, backlash):
         # print("_front_without_top")
         points = [[0, 0], [width, 0]]
-        points.extend(self.tabs(height - thickness, tab_width, thickness,
-                                direction=1,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True
-                                ))
-        points.extend(self.tabs(width, tab_width, thickness,
-                                direction=2,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True
-                                ))
-        points.extend(self.tabs(height - thickness, tab_width, thickness,
-                                direction=3,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True
-                                ))
+        points.extend(self.tabs(height-thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True))
+        points.extend(self.tabs(width,tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
+        points.extend(self.tabs(height-thickness, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True))
         return points
 
     def _front_with_top(self, width, height, tab_width, thickness, backlash):
         # print("_front_with_top")
         points = [[0, thickness]]
-
-        points.extend(self.tabs(width, tab_width, thickness,
-                                direction=0,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True
-                                ))
-        points.extend(self.tabs(height - (thickness * 2), tab_width, thickness,
-                                direction=1,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True
-                                ))
-        points.extend(self.tabs(width, tab_width, thickness,
-                                direction=2,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True
-                                ))
-        points.extend(self.tabs(height - (thickness * 2), tab_width, thickness,
-                                direction=3,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True
-                                ))
+        points.extend(self.tabs(width, tab_width, thickness,direction=0, backlash=backlash,firstUp=True,lastUp=True,inverted=True))
+        points.extend(self.tabs(height - (thickness * 2), tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True))
+        points.extend(self.tabs(width, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
+        points.extend(self.tabs(height - (thickness * 2), tab_width, thickness, direction=3,backlash=backlash,firstUp=True,lastUp=True))
         return points
 
     def _side_without_top(self, depth, height, tab_width, thickness, backlash):
         # print("_side_without_top")
         points = [[thickness, 0], [depth - (4 * thickness), 0]]
-        points.extend(self.tabs(height - thickness, tab_width, thickness,
-                                direction=1,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True
-                                ))
-        points.extend(self.tabs(depth, tab_width, thickness,
-                                direction=2,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True,
-                                cutOff=True
-                                ))
-        points.extend(self.tabs(height - thickness, tab_width, thickness,
-                                direction=3,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True
-                                ))
+        points.extend(self.tabs(height - thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
+        points.extend(self.tabs(depth, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True,cutOff=True))
+        points.extend(self.tabs(height - thickness, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         return points
 
     def _side_with_top(self, depth, height, tab_width, thickness, backlash):
         # print("_side_with_top")
         points = [[thickness, thickness]]
-        points.extend(self.tabs(depth, tab_width, thickness,
-                                direction=0,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True,
-                                cutOff=True
-                                ))
-        points.extend(self.tabs(height - (2 * thickness), tab_width, thickness,
-                                direction=1,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True
-                                ))
-        points.extend(self.tabs(depth, tab_width, thickness,
-                                direction=2,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True,
-                                cutOff=True
-                                ))
-        points.extend(self.tabs(height - (2 * thickness), tab_width, thickness,
-                                direction=3,
-                                backlash=backlash,
-                                firstUp=True,
-                                lastUp=True,
-                                inverted=True
-                                ))
+        points.extend(self.tabs(depth, tab_width, thickness,direction=0,backlash=backlash,firstUp=True,lastUp=True,inverted=True,cutOff=True))
+        points.extend(self.tabs(height - (2 * thickness), tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
+        points.extend(self.tabs(depth, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True,cutOff=True))
+        points.extend(self.tabs(height - (2 * thickness), tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         return points
 
     def box_with_top(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash):
@@ -289,37 +186,56 @@ class BoxEffect():
         paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))), '%s_right_side' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
         return paths
 
-    def box_selection_with_top(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset):
+    def box_selection_without_top(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset):
         """
         draw a box pattern with internal part or not 
         :param segment_offset: {'H':[y_offset_horizontal_segment1,y_offset_horizontal_segment2,ect],'V':[x_offset_vertical_segment1,ect]}
          -> dictionnary of the offset of each internal part to draw
         """
+        ### Draw the 4 side of the box
         paths = []
-        paths.append(self.getPath(
-            self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),
-            '%s_bottom' % prefix,
-            _x + self.mm2u(1 * thickness),
-            _y + self.mm2u(1 * thickness), bg, fg))
-        paths.append(self.getPath(
-            self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),
-            '%s_font' % prefix,
-            _x + self.mm2u(2 * thickness + width),
-            _y + self.mm2u(2 * thickness + depth), bg, fg))
-        paths.append(self.getPath(
-            self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),
-            '%s_back' % prefix,
-            _x + self.mm2u(1 * thickness),
-            _y + self.mm2u(2 * thickness + depth), bg, fg))
-        paths.append(self.getPath(
-            self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),
-            '%s_left_side' % prefix,
-            _x + self.mm2u(2 * thickness + depth),
-            _y + self.mm2u(3 * thickness + depth + height), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(1 * thickness),_y + self.mm2u(1 * thickness), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_font' % prefix,_x + self.mm2u(2 * thickness + width),_y + self.mm2u(2 * thickness + depth), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_back' % prefix,_x + self.mm2u(1 * thickness),_y + self.mm2u(2 * thickness + depth), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),'%s_left_side' % prefix,_x + self.mm2u(2 * thickness + depth),_y + self.mm2u(3 * thickness + depth + height), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),'%s_right_side' % prefix,_x + self.mm2u(1 * thickness),_y + self.mm2u(3 * thickness + depth + height), bg,fg))
+
+        ### Draw internal layer shape
+
+        for i,Horizontal_layer in enumerate(segment_offset['H']):#For each horizontal piece -> draw piece
+            paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(width,height,tab_size,thickness,backlash))),
+                                      '%s_Horizontal_layer_%s' % (prefix,i),
+                                      _x + self.mm2u(thickness - width),
+                                      _y + self.mm2u(2*thickness + 2*depth + i*height), bg,fg))
+            for offset in segment_offset['V']:#for each perpendicular piece -> draw matching rectangle
+                paths.append(self.getPath(self.toPathString(self.mm2u([[0,0],[thickness,0],[0,(height-thickness)/2],[-thickness,0]])),
+                                          '%s_Horizontal_offset_rect_%s' % (prefix,i),
+                                          _x + self.mm2u(offset-width-thickness/2),
+                                          _y + self.mm2u(2 * thickness + 2*depth + i*height), bg,fg))
+        for i,vertical_layer in enumerate(segment_offset['V']):
+            paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(depth,height,tab_size,thickness,backlash))),
+                                      '%s_Vertical_layer_%s' % (prefix,i),
+                                      _x + self.mm2u(1 * thickness),
+                                      _y + self.mm2u(2 * thickness + 2*depth + i*height), bg, fg))
+            for offset in segment_offset['H']:
+                paths.append(self.getPath(self.toPathString(self.mm2u([[0,0],[thickness,0],[0,(height-thickness)/2],[-thickness,0]])),
+                                          '%s_Vertical_offset_rect_%s' % (prefix,i),
+                                          _x + self.mm2u(offset-thickness/2),
+                                          _y + self.mm2u(2 * thickness + 2*depth + i*height+(height-thickness)/2), bg,fg))
         return paths
-    def box_selection_without_top(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset):
+    def box_selection_with_top(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset):
         paths = []
 
         return paths
+
+    def _layer(self,width, height, tab_width, thickness, backlash):
+        """
+        :param offsetlist: list of position of each perpendicular layer
+        """
+        points = [[thickness, 0], [width - (4 * thickness), 0]]
+        points.extend(self.tabs(height - thickness, tab_width, thickness, direction=1, backlash=backlash, firstUp=True,lastUp=True, inverted=True))
+        points.extend([[-width + (2 * thickness), 0], []])
+        points.extend(self.tabs(height - thickness, tab_width, thickness, direction=3, backlash=backlash, firstUp=True,lastUp=True, inverted=True))
+        return points
 
 

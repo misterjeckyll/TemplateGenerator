@@ -10,13 +10,13 @@
     <param name='active-tab' type="notebook">
         <!-- Input Page -->
         <page name="input" _gui-text="Générer une Boite">
-            <param name="path_id" type="string" _gui-text="ID svg de la boite (prefixe))">box</param>
+            <param name="path_id" type="string" _gui-text="ID svg de la boite (nom))">box</param>
             <param name="height" type="float" precision="2" min="0" max="9999999"  _gui-text="Hauteur (mm)">50.00</param>
             <param name="thickness" type="float" precision="2" min="0" max="9999999"  _gui-text="Epaisseur du matériau (mm)">3.00</param>
             <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches (mm)">10.00</param>
-            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (mm)">0.1</param>
+            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (mm)(~0.1)">0.1</param>
             <!-- Top edge type -->
-            <param name="type" type="enum" gui-text="Bord supérieur" gui-description="Type de boite">
+            <param name="type" type="enum" gui-text="Type de Boite" gui-description="Type de boite">
                 <item value="o">Boite ouverte</item>
                 <item value="oe">Boite ouverte empilable</item>
                 <item value="oc">Boite ouverte avec couvercle</item>
@@ -27,10 +27,18 @@
         </page>
         <!-- Help page -->
         <page name="help" _gui-text="Aide">
-            <param name="help" type="description" xml:space="preserve">Cet utilitaire permet de générer le plan svg
+            <param name="help" type="description" xml:space="preserve">Cet utilitaire permet de générer le chemin
 d'une boite à encoche, à partir d'une sélection:
-- Un rectangle défini la largeur et la profondeur de la boite
-- Pour chaque ligne droite croisant le rectangle un élément intercalaire est créé
+- Un rectangle donne la largeur et la profondeur de la boite(vue du dessus)
+- Une cloison interne est créé pour toute ligne droite croisant le rectangle
+
+Exemple d'utilisation :
+1) Tracer un rectangle avec l'outil rectangle (f4)
+2) Indiquer la largeur (W) et la hauteur (H) du rectangle dans les champs de mesure
+3) Selectionner l'outil dessin en ligne (shift+f6) avec le mode "ligne paraxial"
+3) Tracer un segment Horizontal qui traverse le rectangle et validez avec Entrer
+4) Indiquer la hauteur de la boite et la largeur des encoches
+5) Tout selectionner avant d'appliquer
             </params>
         </page>
     </param>
