@@ -169,7 +169,6 @@ class BoxEffect():
                     points.append([tab_width - backlash, 0])
 
         return points
-
 # ------------------------------------------------------------------#
 # Shape of each box pieces
 # ------------------------------------------------------------------#
@@ -184,7 +183,7 @@ class BoxEffect():
 
     def _front_without_top(self, width, height, tab_width, thickness, backlash,top_part=0):
         # print("_front_without_top")
-        points = [[0, 0], [width, 0]]
+        points = [[0, top_part], [width, 0]]
         points.extend(self.tabs(height-thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True))
         points.extend(self.tabs(width,tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         points.extend(self.tabs(height-thickness, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True))
@@ -235,7 +234,7 @@ class BoxEffect():
         paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))), '%s_right_side' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
         return paths
 #------------------------------------------------------------------#
-# Shapes of selected type of box
+# Main Shapes of selected type of box
 #------------------------------------------------------------------#
     def box_without_top_selection(self, layout,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,lid):
         """
@@ -268,7 +267,9 @@ class BoxEffect():
         paths = self.box_layer(layout,paths,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,lid)
 
         return paths
-
+#------------------------------------------------------------------#
+# Many time used shapes
+#------------------------------------------------------------------#
     def box_layer(self,layout,paths,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,lid):
         ### Draw internal layer shapes : tabbed holes,intern part, matching rectangles
 
