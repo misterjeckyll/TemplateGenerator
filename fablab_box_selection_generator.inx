@@ -26,7 +26,7 @@
             </param>
         </page>
         <!-- Info page-->
-        <page name="info" _gui-text="Avancé">
+        <page name="info" _gui-text="Info">
             <param name="info" type="description" xml:space="preserve">
 Matière enlevé par le laser:
 
