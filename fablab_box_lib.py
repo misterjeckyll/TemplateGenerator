@@ -63,7 +63,7 @@ class BoxEffect():
 # ------------------------------------------------------------------#
 # Hole for tabbed paths
 # ------------------------------------------------------------------#
-    def holes(self,length, tab_width,thickness,direction=0,backlash=0):
+    def holes(self,length, tab_width,thickness,direction,paths,prefix,_x,_y,bg,fg,width,depth,height,backlash):
 
         ### Calcultate tab size and number
         nb_tabs = math.floor(length / tab_width)
@@ -74,8 +74,33 @@ class BoxEffect():
             raise BoxGenrationError("Attention les encoches resultantes (%s mm) ne sont pas assez larges au vue de l'epasseur de votre materiaux. Merci d'utiliser une taille d'encoches coherente avec votre boite" % tab_real_width)
 
         inkex.debug("Pour une largeur de %s et des encoches de %s => Nombre d'encoches : %s Largeur d'encoche : %s" % (length, tab_width, nb_tabs, tab_real_width))
-        points = []
-        return points
+
+        for i in range(1,nb_tabs+1):
+            if(not direction):#0:horizontal,1:vertical
+                if (i % 2 == 0):
+                    if(i==1 or i == nb_tabs):
+                        paths.append(self.getPath(
+                            self.toPathString(self.mm2u([[0.5*backlash, 0],[0,thickness],[tab_real_width+backlash,0],[0,-thickness]])),
+                            '%s_H_finger_Hole_%s' % (prefix, i),
+                            _x + self.mm2u(i * (tab_real_width)),_y, bg, fg))
+                    else:
+                        paths.append(self.getPath(
+                            self.toPathString(self.mm2u([[backlash, 0],[0,thickness],[tab_real_width+backlash,0],[0,-thickness]])),
+                            '%s_H_finger_Hole_%s' % (prefix, i),
+                            _x + self.mm2u(i * (tab_real_width)) ,_y, bg, fg))
+            else:
+                if (i % 2 == 0):
+                    if (i == 1):
+                        paths.append(self.getPath(self.toPathString(self.mm2u(
+                            [[0, 0.5*backlash ], [thickness, 0], [0, tab_real_width + backlash],[-thickness,0 ]])),
+                            '%s_V_finger_Hole_%s' % (prefix, i),
+                            _x , _y+ self.mm2u(i*tab_real_width), bg, fg))
+                    else:
+                        paths.append(self.getPath(self.toPathString(self.mm2u(
+                            [[0, backlash], [thickness, 0], [0, tab_real_width + backlash],[-thickness, 0]])),
+                            '%s_V_finger_Hole_%s' % (prefix, i),
+                            _x, _y + self.mm2u(i*tab_real_width), bg, fg))
+        return paths
 # ------------------------------------------------------------------#
 # Tabbed paths
 # ------------------------------------------------------------------#
@@ -200,8 +225,7 @@ class BoxEffect():
         paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))), '%s_top' % prefix, _x + self.mm2u(2 * thickness + width), _y + self.mm2u(1 * thickness), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._front_with_top(width, height, tab_size, thickness, backlash))), '%s_font' % prefix, _x + self.mm2u(2 * thickness + width), _y + self.mm2u(2 * thickness + depth), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._front_with_top(width, height, tab_size, thickness, backlash))), '%s_back' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(2 * thickness + depth), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_size, thickness, backlash))), '%s_left_side' %
-                                  prefix, _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_size, thickness, backlash))), '%s_left_side' %  prefix, _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_size, thickness, backlash))), '%s_right_side' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
         return paths
 
@@ -210,8 +234,7 @@ class BoxEffect():
         paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))), '%s_bottom' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(1 * thickness), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))), '%s_font' % prefix, _x + self.mm2u(2 * thickness + width), _y + self.mm2u(2 * thickness + depth), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))), '%s_back' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(2 * thickness + depth), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))), '%s_left_side' %
-                                  prefix, _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))), '%s_left_side' % prefix, _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
         paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))), '%s_right_side' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height), bg, fg))
         return paths
 #------------------------------------------------------------------#
@@ -223,43 +246,61 @@ class BoxEffect():
         :param segment_offset: {'H':[y_offset_horizontal_segment1,y_offset_horizontal_segment2,ect],'V':[x_offset_vertical_segment1,ect]}
          -> dictionnary of the offset of each internal part to draw
         """
+        ### Calcultate tab size and number
+        nb_tabs = math.floor((height-thickness) / tab_size)
+        nb_tabs = int(nb_tabs - 1 + (nb_tabs % 2))
+        tab_real_width = (height-thickness) / nb_tabs
+        # Check if no inconsistency on tab size and number
+        if (tab_real_width <= thickness * 1.5):
+            raise BoxGenrationError(
+                "Attention les encoches resultantes (%s mm) ne sont pas assez larges au vue de l'epasseur de votre materiaux. Merci d'utiliser une taille d'encoches coherente avec votre boite" % tab_real_width)
+
         ### Draw the 4 side of the box
         paths = []
         if closed:
             paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),
                              '%s_top' % prefix, _x + self.mm2u(2 * thickness + width), _y + self.mm2u(1 * thickness),bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(1 * thickness),_y + self.mm2u(1 * thickness), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_font' % prefix,_x + self.mm2u(2 * thickness + width),_y + self.mm2u(2 * thickness + depth), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_back' % prefix,_x + self.mm2u(1 * thickness),_y + self.mm2u(2 * thickness + depth), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),'%s_left_side' % prefix,_x + self.mm2u(2 * thickness + depth),_y + self.mm2u(3 * thickness + depth + height), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),'%s_right_side' % prefix,_x + self.mm2u(1 * thickness),_y + self.mm2u(3 * thickness + depth + height), bg,fg))
+        bottom_pos = [thickness,thickness]
+        front_pos = [thickness,depth+2*thickness]
+        back_pos = [width+2*thickness,depth + 2*thickness]
+        left_pos = [thickness,depth + height+3*thickness]
+        right_pos = [depth+2*thickness,depth + height+3*thickness]
+        H_layer_pos = [thickness,depth + 2*height+4*thickness]
+        V_layer_pos = [3*thickness+width,depth + 2*height+4*thickness]
+
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(bottom_pos[0]),_y + self.mm2u(bottom_pos[1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_front' % prefix,_x + self.mm2u(front_pos[0]),_y + self.mm2u(front_pos[1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_back' % prefix,_x + self.mm2u(back_pos[0]),_y + self.mm2u(back_pos[1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),'%s_left_side' % prefix,_x + self.mm2u(left_pos[0]),_y + self.mm2u(left_pos[1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),'%s_right_side' % prefix,_x + self.mm2u(right_pos[0]),_y + self.mm2u(right_pos[1]), bg,fg))
 
         ### Draw internal layer shape
 
-        for i,Horizontal_layer in enumerate(segment_offset['H']):#For each horizontal piece -> draw piece
-            paths.append(self.getPath(self.toPathString(self.mm2u(self.holes(depth,tab_size,thickness,0,backlash))),
-                                      '%s_H_finger_Hole_%s'%(prefix,i),
-                                      _x,
-                                      _y,bg,fg))
+        for i,horizontal_offset in enumerate(segment_offset['H']):#For each horizontal piece -> draw shape and hole line
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(left_pos[0]+horizontal_offset),_y+ self.mm2u(left_pos[1]),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(right_pos[0]+horizontal_offset),_y+ self.mm2u(right_pos[1]),bg,fg,width,depth,height,backlash)
             paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(width,height,tab_size,thickness,backlash))),
                                       '%s_Horizontal_layer_%s' % (prefix,i),
-                                      _x + self.mm2u(thickness - width),
-                                      _y + self.mm2u(thickness + 3*depth + i*height), bg,fg))
+                                      _x + self.mm2u(H_layer_pos[0]),
+                                      _y + self.mm2u(H_layer_pos[1]+i*height), bg,fg))
             for offset in segment_offset['V']:#for each perpendicular piece -> draw matching rectangle
                 paths.append(self.getPath(self.toPathString(self.mm2u([[0,0],[thickness,0],[0,(height-thickness)/2],[-thickness,0]])),
                                           '%s_Horizontal_offset_rect_%s' % (prefix,i),
-                                          _x + self.mm2u(offset-width-thickness/2),
-                                          _y + self.mm2u(thickness + 3*depth + i*height), bg,fg))
-        for i,vertical_layer in enumerate(segment_offset['V']):
+                                          _x + self.mm2u(H_layer_pos[0]+offset),
+                                          _y + self.mm2u(H_layer_pos[1]+i*height), bg,fg))
+
+        for i,vertical_offset in enumerate(segment_offset['V']):
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(front_pos[0]+vertical_offset),_y+ self.mm2u(front_pos[1]),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(back_pos[0]+vertical_offset),_y+ self.mm2u(back_pos[1]),bg,fg,width,depth,height,backlash)
             paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(depth,height,tab_size,thickness,backlash))),
                                       '%s_Vertical_layer_%s' % (prefix,i),
-                                      _x + self.mm2u(2 * thickness),
-                                      _y + self.mm2u(thickness + 3*depth + i*height), bg, fg))
+                                      _x + self.mm2u(V_layer_pos[0]),
+                                      _y + self.mm2u(V_layer_pos[1]+i*height), bg, fg))
             for offset in segment_offset['H']:
                 paths.append(self.getPath(self.toPathString(self.mm2u([[0,0],[thickness,0],[0,(height-thickness)/2],[-thickness,0]])),
                                           '%s_Vertical_offset_rect_%s' % (prefix,i),
-                                          _x + self.mm2u(2*thickness+offset-thickness/2),
-                                          _y + self.mm2u(thickness + 3*depth + i*height+(height-thickness)/2), bg,fg))
+                                          _x + self.mm2u(V_layer_pos[0]+offset-thickness/2),
+                                          _y + self.mm2u(V_layer_pos[1]+i*height+(height-thickness)/2), bg,fg))
         return paths
 
     def _layer(self,width, height, tab_width, thickness, backlash):

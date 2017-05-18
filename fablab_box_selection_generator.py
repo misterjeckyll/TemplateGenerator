@@ -93,7 +93,6 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
             'o':self.box_selection(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,closed=False)
         }
         for shape in switch[self.options.type]:
-            inkex.debug(shape)
             inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)
 
 if __name__ == '__main__':
