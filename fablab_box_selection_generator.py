@@ -87,10 +87,23 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         [[segment_offset[key].append(position-y_pos)if key=='H' else segment_offset[key].append(position-x_pos)] for key,elt_list in segment_pos.iteritems() for position in elt_list ]
         #inkex.debug(segment_offset)
 
+        ### Pieces layout
+        layout = {
+            'bottom_pos' : [self.options.thickness,self.options.thickness],
+            'top_pos' : [2 * self.options.thickness + width,self.options.thickness],
+            'front_pos' : [self.options.thickness,depth+2*self.options.thickness],
+            'back_pos' : [width+2*self.options.thickness,depth + 2*self.options.thickness],
+            'left_pos' : [self.options.thickness,depth + height+3*self.options.thickness],
+            'right_pos' : [depth+2*self.options.thickness,depth + height+3*self.options.thickness],
+            'H_layer_pos' : [self.options.thickness,depth + 2*height+4*self.options.thickness],
+            'V_layer_pos' : [3*self.options.thickness+width,depth + 2*height+4*self.options.thickness]
+        }
+        
         ### Switch statemetn to decide wich type of box to generate
         switch = {
-            'f':self.box_selection(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,closed=True),
-            'o':self.box_selection(self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,closed=False)
+            'f':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,lid=False),
+            'o':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,lid=False),
+            'oc':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,lid=True)
         }
         for shape in switch[self.options.type]:
             inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)

@@ -20,7 +20,6 @@
                 <item value="o">Boite ouverte</item>
                 <item value="oe">Boite ouverte empilable</item>
                 <item value="oc">Boite ouverte avec couvercle</item>
-                <item value="occ">Boite ouverte avec couvercle coulissant</item>
                 <item value="f">Boite fermée</item>
                 <item value="fe">Boite fermée empilable</item>
             </param>
@@ -60,10 +59,6 @@ Exemple d'utilisation :
             </params>
         </page>
     </param>
-
-
-
-
   <effect>
     <object-type>all</object-type>
     <effects-menu>
