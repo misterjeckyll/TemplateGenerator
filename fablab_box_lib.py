@@ -178,7 +178,7 @@ class BoxEffect():
 # ------------------------------------------------------------------#
 ### Bottom/top
     def _stackable_bottom(self, width, depth, tab_width, thickness, backlash):
-        points = [[thickness,0],[0, 0]]
+        points = [[thickness,0]]
         points.extend(self.tabs(width-4*thickness, tab_width, thickness,direction=0,backlash=backlash,firstUp=True,lastUp=False))
         points.extend([[0,thickness],[thickness,0]])
         points.extend(self.tabs(depth-4*thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=False,lastUp=False))
