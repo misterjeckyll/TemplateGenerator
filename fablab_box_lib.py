@@ -340,13 +340,13 @@ class BoxEffect():
         layout['V_layer_pos'][1] += 6 * thickness
 
         ### Calcultate tab size and number
-        nb_tabs = math.floor((width-2*thickness) / tab_size)
+        nb_tabs = math.floor((width) / tab_size)
         nb_tabs = int(nb_tabs - 1 + (nb_tabs % 2))
-        tab_real_width = (width-2*thickness) / nb_tabs
+        tab_real_width = (width) / nb_tabs
 
-        nb_tabs = math.floor((depth-2*thickness) / tab_size)
+        nb_tabs = math.floor((depth) / tab_size)
         nb_tabs = int(nb_tabs - 1 + (nb_tabs % 2))
-        tab_real_depth = (depth-2*thickness) / nb_tabs
+        tab_real_depth = (depth) / nb_tabs
 
 
         # Check if no inconsistency on tab size and number
