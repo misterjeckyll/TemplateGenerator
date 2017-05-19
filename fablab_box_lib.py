@@ -180,10 +180,10 @@ class BoxEffect():
         points.extend(self.tabs(width, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True))
         points.extend(self.tabs(depth, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True))
         return points
-
-    def _front_without_top(self, width, height, tab_width, thickness, backlash,top_part=0):
+### Front
+    def _front_without_top(self, width, height, tab_width, thickness, backlash):
         # print("_front_without_top")
-        points = [[0, top_part], [width, 0]]
+        points = [[0, 0], [width, 0]]
         points.extend(self.tabs(height-thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True))
         points.extend(self.tabs(width,tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         points.extend(self.tabs(height-thickness, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True))
@@ -197,8 +197,14 @@ class BoxEffect():
         points.extend(self.tabs(width, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         points.extend(self.tabs(height - (thickness * 2), tab_width, thickness, direction=3,backlash=backlash,firstUp=True,lastUp=True))
         return points
-
-    def _side_without_top(self, depth, height, tab_width, thickness, backlash,top_part=0):
+    def _stackable_front_without_top(self, width, height, tab_width, thickness, backlash):
+        points = [[0, 0], [thickness*4, 0],[0,thickness*2],[width-8*thickness,0],[0,thickness*2],[thickness*4,0]]
+        points.extend(self.tabs(height-thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True))
+        points.extend(self.tabs(width,tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
+        points.extend(self.tabs(height-thickness, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True))
+        return points
+### Side
+    def _side_without_top(self, depth, height, tab_width, thickness, backlash):
         # print("_side_without_top")
         points = [[thickness, 0], [depth - (4 * thickness), 0]]
         points.extend(self.tabs(height - thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
@@ -213,6 +219,14 @@ class BoxEffect():
         points.extend(self.tabs(height - (2 * thickness), tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         points.extend(self.tabs(depth, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True,cutOff=True))
         points.extend(self.tabs(height - (2 * thickness), tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
+        return points
+    def stackable_side_without_top(self, depth, height, tab_width, thickness, backlash):
+        # print("_side_without_top")
+        points = [[thickness, 0], [thickness*3, 0],[0,thickness*2],[depth-8*thickness,0],[0,thickness*2],[thickness*4,0]]
+        #points = [[thickness, 0], [depth - (4 * thickness), 0]]
+        points.extend(self.tabs(height - thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
+        points.extend(self.tabs(depth, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True,cutOff=True))
+        points.extend(self.tabs(height - thickness, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         return points
 
     def box_with_top(self, prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash):
@@ -236,16 +250,16 @@ class BoxEffect():
 #------------------------------------------------------------------#
 # Main Shapes of selected type of box
 #------------------------------------------------------------------#
-    def box_without_top_selection(self, layout,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,lid):
+    def box_without_top_selection(self, layout,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,layeroffset,lid):
         """
         draw a box pattern with internal part or not 
         :param segment_offset: {'H':[y_offset_horizontal_segment1,y_offset_horizontal_segment2,ect],'V':[x_offset_vertical_segment1,ect]}
          -> dictionnary of the offset of each internal part to draw
         """
         ### Calcultate tab size and number
-        nb_tabs = math.floor((height-thickness) / tab_size)
+        nb_tabs = math.floor((height-layeroffset-thickness) / tab_size)
         nb_tabs = int(nb_tabs - 1 + (nb_tabs % 2))
-        tab_real_width = (height-thickness) / nb_tabs
+        tab_real_width = (height-layeroffset-thickness) / nb_tabs
         # Check if no inconsistency on tab size and number
         if (tab_real_width <= thickness * 1.5):
             raise BoxGenrationError(
@@ -257,25 +271,78 @@ class BoxEffect():
         top_part = 0
         if(lid):
             top_part = thickness
-            paths = self.lid(paths,width,depth,thickness)
+            paths = self.lid(prefix,paths,_x,_y,layout,width,depth,thickness,bg,fg)
         paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(layout['bottom_pos'][0]),_y + self.mm2u(layout['bottom_pos'][1]), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash,top_part))),'%s_front' % prefix,_x + self.mm2u(layout['front_pos'][0]),_y + self.mm2u(layout['front_pos'][1]), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash,top_part))),'%s_back' % prefix,_x + self.mm2u(layout['back_pos'][0]),_y + self.mm2u(layout['back_pos'][1]), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash,top_part))),'%s_left_side' % prefix,_x + self.mm2u(layout['left_pos'][0]),_y + self.mm2u(layout['left_pos'][1]), bg, fg))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash,top_part))),'%s_right_side' % prefix,_x + self.mm2u(layout['right_pos'][0]),_y + self.mm2u(layout['right_pos'][1]), bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_front' % prefix,_x + self.mm2u(layout['front_pos'][0]),_y + self.mm2u(layout['front_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_size, thickness, backlash))),'%s_back' % prefix,_x + self.mm2u(layout['back_pos'][0]),_y + self.mm2u(layout['back_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),'%s_left_side' % prefix,_x + self.mm2u(layout['left_pos'][0]),_y + self.mm2u(layout['left_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_size, thickness, backlash))),'%s_right_side' % prefix,_x + self.mm2u(layout['right_pos'][0]),_y + self.mm2u(layout['right_pos'][1]), bg,fg))
 
-        paths = self.box_layer(layout,paths,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,lid)
+        paths = self.box_layer(layout,paths,prefix, _x, _y, bg, fg, width, depth, height,layeroffset, tab_size, thickness, backlash,segment_offset,lid)
+
+        return paths
+
+    def box_with_top_selection(self, layout,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,layeroffset,lid):
+        ### Calcultate tab size and number
+        nb_tabs = math.floor((height-layeroffset-thickness) / tab_size)
+        nb_tabs = int(nb_tabs - 1 + (nb_tabs % 2))
+        tab_real_width = (height-layeroffset-thickness) / nb_tabs
+        # Check if no inconsistency on tab size and number
+        if (tab_real_width <= thickness * 1.5):
+            raise BoxGenrationError(
+                "Attention les encoches resultantes (%s mm) ne sont pas assez larges au vue de l'epasseur de votre materiaux. Merci d'utiliser une taille d'encoches coherente avec votre boite" % tab_real_width)
+
+        ### Draw each side of the box
+        paths = []
+        top_part = 0
+        if(lid):
+            top_part = thickness
+            paths = self.lid(prefix,paths,_x,_y,layout,width,depth,thickness,bg,fg)
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(layout['bottom_pos'][0]),_y + self.mm2u(layout['bottom_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(layout['top_pos'][0]),_y + self.mm2u(layout['top_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_with_top(width, height, tab_size, thickness, backlash))),'%s_front' % prefix,_x + self.mm2u(layout['front_pos'][0]),_y + self.mm2u(layout['front_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_with_top(width, height, tab_size, thickness, backlash))),'%s_back' % prefix,_x + self.mm2u(layout['back_pos'][0]),_y + self.mm2u(layout['back_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_size, thickness, backlash))),'%s_left_side' % prefix,_x + self.mm2u(layout['left_pos'][0]),_y + self.mm2u(layout['left_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_size, thickness, backlash))),'%s_right_side' % prefix,_x + self.mm2u(layout['right_pos'][0]),_y + self.mm2u(layout['right_pos'][1]), bg,fg))
+
+        paths = self.box_layer(layout,paths,prefix, _x, _y, bg, fg, width, depth, height,layeroffset, tab_size, thickness, backlash,segment_offset,lid)
+
+        return paths
+    def box_without_top_stackable_selection(self, layout,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,layeroffset,lid):
+        ### Calcultate tab size and number
+        nb_tabs = math.floor((height-layeroffset-thickness) / tab_size)
+        nb_tabs = int(nb_tabs - 1 + (nb_tabs % 2))
+        tab_real_width = (height-layeroffset-thickness) / nb_tabs
+        # Check if no inconsistency on tab size and number
+        if (tab_real_width <= thickness * 1.5):
+            raise BoxGenrationError(
+                "Attention les encoches resultantes (%s mm) ne sont pas assez larges au vue de l'epasseur de votre materiaux. Merci d'utiliser une taille d'encoches coherente avec votre boite" % tab_real_width)
+
+        ### Draw each side of the box
+        paths = []
+        top_part = 0
+        if(lid):
+            top_part = thickness
+            paths = self.lid(prefix,paths,_x,_y,layout,width,depth,thickness,bg,fg)
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(layout['bottom_pos'][0]),_y + self.mm2u(layout['bottom_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_front_without_top(width, height, tab_size, thickness, backlash))),'%s_front' % prefix,_x + self.mm2u(layout['front_pos'][0]),_y + self.mm2u(layout['front_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_front_without_top(width, height, tab_size, thickness, backlash))),'%s_back' % prefix,_x + self.mm2u(layout['back_pos'][0]),_y + self.mm2u(layout['back_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self.stackable_side_without_top(depth, height, tab_size, thickness, backlash))),'%s_left_side' % prefix,_x + self.mm2u(layout['left_pos'][0]),_y + self.mm2u(layout['left_pos'][1]), bg, fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self.stackable_side_without_top(depth, height, tab_size, thickness, backlash))),'%s_right_side' % prefix,_x + self.mm2u(layout['right_pos'][0]),_y + self.mm2u(layout['right_pos'][1]), bg,fg))
+
+        paths = self.box_layer(layout,paths,prefix, _x, _y, bg, fg, width, depth, height,layeroffset, tab_size, thickness, backlash,segment_offset,lid)
 
         return paths
 #------------------------------------------------------------------#
 # Many time used shapes
 #------------------------------------------------------------------#
-    def box_layer(self,layout,paths,prefix, _x, _y, bg, fg, width, depth, height, tab_size, thickness, backlash,segment_offset,lid):
+    def box_layer(self,layout,paths,prefix, _x, _y, bg, fg, width, depth, height,layeroffset, tab_size, thickness, backlash,segment_offset,lid):
+        height = height-layeroffset
         ### Draw internal layer shapes : tabbed holes,intern part, matching rectangles
 
         for i,horizontal_offset in enumerate(segment_offset['H']):#For each horizontal piece -> draw layer shape and tabbed hole line
-            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['left_pos'][0]+horizontal_offset-thickness/2),_y+ self.mm2u(layout['left_pos'][1]),bg,fg,width,depth,height,backlash)
-            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['right_pos'][0]+horizontal_offset-thickness/2),_y+ self.mm2u(layout['right_pos'][1]),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['left_pos'][0]+horizontal_offset-thickness/2),_y+ self.mm2u(layout['left_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['right_pos'][0]+horizontal_offset-thickness/2),_y+ self.mm2u(layout['right_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
             paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(width,height,tab_size,thickness,backlash))),
                                       '%s_Horizontal_layer_%s' % (prefix,i),
                                       _x + self.mm2u(layout['H_layer_pos'][0]),
@@ -287,8 +354,8 @@ class BoxEffect():
                                           _y + self.mm2u(layout['H_layer_pos'][1]+i*height), bg,fg))
 
         for i,vertical_offset in enumerate(segment_offset['V']):
-            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['front_pos'][0]+vertical_offset-thickness/2),_y+ self.mm2u(layout['front_pos'][1]),bg,fg,width,depth,height,backlash)
-            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['back_pos'][0]+vertical_offset-thickness/2),_y+ self.mm2u(layout['back_pos'][1]),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['front_pos'][0]+vertical_offset-thickness/2),_y+ self.mm2u(layout['front_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['back_pos'][0]+vertical_offset-thickness/2),_y+ self.mm2u(layout['back_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
             paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(depth,height,tab_size,thickness,backlash))),
                                       '%s_Vertical_layer_%s' % (prefix,i),
                                       _x + self.mm2u(layout['V_layer_pos'][0]),
@@ -299,9 +366,12 @@ class BoxEffect():
                                           _x + self.mm2u(layout['V_layer_pos'][0]+offset-thickness/2-2*thickness),
                                           _y + self.mm2u(layout['V_layer_pos'][1]+i*height+(height-thickness)/2), bg,fg))
         return paths
-    def lid(self,paths,width,depth,thickness):
 
+    def lid(self,prefix,paths,_x,_y,layout,width,depth,thickness,bg,fg):
+        paths.append(self.getPath(self.toPathString(self.mm2u([[0,0],[width-2*thickness,0],[0,depth-2*thickness],[-width+2*thickness,0]])),'%s_bottom_lid' % prefix,_x + self.mm2u(layout['top_pos'][0]+width+thickness),_y + self.mm2u(layout['top_pos'][1]), bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u([[0,0],[width,0],[0,depth],[-width,0]])),'%s_top_lid' % prefix,_x + self.mm2u(layout['top_pos'][0]+2*(width+thickness)),_y + self.mm2u(layout['top_pos'][1]), bg,fg))
         return paths
+
     def _layer(self,width, height, tab_width, thickness, backlash):
         points = [[thickness, 0], [width - (4 * thickness), 0]]
         points.extend(self.tabs(height - thickness, tab_width, thickness, direction=1, backlash=backlash, firstUp=True,lastUp=True, inverted=True))

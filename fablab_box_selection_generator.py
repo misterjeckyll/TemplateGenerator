@@ -45,6 +45,7 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         self.OptionParser.add_option('--backlash',      action='store',type='float',    dest='backlash',    default=0.1,    help='Matière enlevé par le laser')
         self.OptionParser.add_option('--type',          action="store",type='string',   dest='type',        default='e',    help='type de boite')
         self.OptionParser.add_option('--tab_size',      action='store',type='float',    dest='tab_size',    default=10,     help='Tab size')
+        self.OptionParser.add_option('--layeroffset',      action='store',type='float',    dest='layeroffset',    default=0,     help='espace libre au dessus des compartiements')
         self.OptionParser.add_option("", "--active-tab",action="store",type="string",   dest="active_tab",  default='title',help="Active tab.")
         self.start_stop = {}
 
@@ -61,6 +62,7 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         bgcolor = None
         width, depth = 0,0
         height = self.options.height
+        layeroffset = self.options.layeroffset
         document_height = self.unittouu(self.document.getroot().get('height'))
 
         ### Gather incoming params from selection
@@ -101,9 +103,10 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         
         ### Switch statemetn to decide wich type of box to generate
         switch = {
-            'f':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,lid=False),
-            'o':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,lid=False),
-            'oc':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,lid=True)
+            'f':self.box_with_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,lid=False),
+            'o':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,lid=False),
+            'oc':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,lid=True),
+            'oe':self.box_without_top_stackable_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,lid=False)
         }
         for shape in switch[self.options.type]:
             inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)
