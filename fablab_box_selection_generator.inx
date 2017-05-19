@@ -14,7 +14,7 @@
             <param name="height" type="float" precision="2" min="0" max="9999999"  _gui-text="Hauteur (mm)">50.00</param>
             <param name="thickness" type="float" precision="2" min="0" max="9999999"  _gui-text="Epaisseur du matériau (mm)">3.00</param>
             <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches (mm)">10.00</param>
-            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (~0.1mm)">0.1</param>
+            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (~0.1mm)">0.</param>
             <param name="layeroffset" type="float" precision="2" min="0" max="9999999"  _gui-text="Espace libre au dessus des compartiments">0.</param>
             <!-- Top edge type -->
             <param name="type" type="enum" gui-text="Type de Boite" gui-description="Type de boite">
@@ -22,7 +22,6 @@
                 <item value="oe">Boite ouverte empilable</item>
                 <item value="oc">Boite ouverte avec couvercle</item>
                 <item value="f">Boite fermée</item>
-                <item value="fe">Boite fermée empilable</item>
             </param>
         </page>
         <!-- Info page-->
