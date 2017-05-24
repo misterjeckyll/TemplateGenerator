@@ -15,7 +15,7 @@
             <param name="thickness" type="float" precision="2" min="0" max="9999999"  _gui-text="Epaisseur du matériau (mm)">3.00</param>
             <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches (mm)">10.00</param>
             <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (~0.1mm)">0.</param>
-            <param name="layeroffset" type="float" precision="2" min="0" max="9999999"  _gui-text="Espace libre au dessus des compartiments">0.</param>
+            <param name="layeroffset" type="float" precision="2" min="0" max="9999999"  _gui-text="Espace libre au dessus des compartiments (mm)">0.</param>
             <!-- Top edge type -->
             <param name="type" type="enum" gui-text="Type de Boite" gui-description="Type de boite">
                 <item value="o">Boite ouverte</item>
@@ -29,16 +29,12 @@
             <param name="info" type="description" xml:space="preserve">
 Matière enlevé par le laser:
 
-- Dépend du matériau et du laser, ajuste le jeu entre les assemblages
+- Dépend du matériaux et du laser, ajuste le jeu entre les assemblages. Permet de sérrer les assemblages avec une valeur > 0.
 
-Taille des encoches :
-
--Donne une piece sans enchoches si la valeur est trop petite
-
-Selection :
+Sélection :
 
 -Un rectangle indique les dimensions extérieures de la boite
--La fenetre alignement et distribution permet de placer les segments intercalaire à interval régulier
+-La fenêtre alignement et distribution permet de placer les segments intercalaires à interval régulier
 
             </param>
         </page>

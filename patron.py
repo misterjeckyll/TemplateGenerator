@@ -85,16 +85,20 @@ class Patron(inkex.Effect):
         except AttributeError:
             return self.unittouu(param)
 
-    def detectsize(self,type,hip,waist,chest,height):
-        "Return us standard size coresponding to mesure in cm"
+    def detectsize(self,type,mesure_list):
+        "Return us standard size corresponding to mesure in cm"
         sizedic = {
             "fem":{"s":[[86,90],[64,68],[80,84]],"m":[[90,94],[68,72],[84,88]],"l":[[94,98],[72,76],[88,92]]},
             "masc":{"xs":[[],[],[]],"s":(94),"m":(),"l":(),"xl":()}
         }
+        size_found = []
         for standard_size,sizelist in sizedic[type].items():
-            if chest >= self.getUnittouu(str(sizelist[2][0])+"cm") and chest < self.getUnittouu(str(sizelist[2][1])+"cm"):
-                return standard_size
-        inkex.debug("Les mesures indiqués ne correspondent à aucun patron préenregistré")
+            for mesure,range in zip(mesure_list,sizelist):
+                if self.getUnittouu(str(range[1])+"cm") > mesure >= self.getUnittouu(str(range[0])+"cm"):
+                    size_found.append(standard_size)
+        inkex.debug(size_found)
+        return size_found[-1]
+        #inkex.debug("Les mesures indiqués ne correspondent à aucun patron préenregistré")
         exit()
             
     def getColorString(self, longColor, verbose=False):
@@ -278,7 +282,7 @@ class Patron(inkex.Effect):
                      'fill': self.path_fill,
                      'stroke-width': self.path_stroke_width}
 
-            size = self.detectsize(type,hip,waist,chest,height)
+            size = self.detectsize(type,[hip,waist,chest])
             for name,piece in savedtemplate[type][size].items():
                 # This finds center of current view in inkscape
                 t = 'translate(%s,%s)' % (self.view_center[0], self.view_center[1])

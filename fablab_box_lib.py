@@ -46,16 +46,11 @@ class BoxEffect():
         return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), end)
 
     def getPath(self, path, path_id, _x, _y, bg, fg):
-
-        style = ''
-        if(bg):
-            style += "fill:%s;" % bg
-        else:
-            style += "fill:none;"
-        if(fg):
-            style += "stroke:%s;" % fg
+        style = {'stroke': fg,
+                 'fill': bg if(bg) else 'none',
+                 'stroke-width': 0.1}
         return {
-            'style': style,
+            'style': simplestyle.formatStyle(style),
             'id': path_id,
             'transform': "translate(%s,%s)" % (_x, _y),
             'd': path
@@ -63,7 +58,7 @@ class BoxEffect():
 # ------------------------------------------------------------------#
 # Hole for tabbed paths
 # ------------------------------------------------------------------#
-    def holes(self,length, tab_width,thickness,direction,paths,prefix,_x,_y,bg,fg,width,depth,height,backlash,stack=False):
+    def holes(self,length, tab_width,thickness,direction,paths,prefix,_x,_y,bg,fg,width,depth,height,backlash,stack=False,inverted=True):
 
         ### Calcultate tab size and number
         nb_tabs = math.floor(length / tab_width)
@@ -77,18 +72,18 @@ class BoxEffect():
         # position adjustment if stack
         stackoffset = 2*thickness if stack else 0
         if(not direction):
-            for i in range(1,nb_tabs+2):
-                if (i % 2 == 0):
+            for i in range(1,nb_tabs+1):
+                if (i % 2 == inverted):
                     if(i==1):
                         paths.append(self.getPath(
                             self.toPathString(self.mm2u([[0.5*backlash, 0],[0,thickness],[tab_real_width+backlash,0],[0,-thickness]])),
                             '%s_H_finger_Hole_%s' % (prefix, i),
-                            _x + self.mm2u((i-1) * (tab_real_width)),_y, bg, fg))
+                            _x + self.mm2u((i-inverted) * (tab_real_width)),_y, bg, fg))
                     else:
                         paths.append(self.getPath(
                             self.toPathString(self.mm2u([[backlash, 0],[0,thickness],[tab_real_width+backlash,0],[0,-thickness]])),
                             '%s_H_finger_Hole_%s' % (prefix, i),
-                            _x + self.mm2u((i-1) * (tab_real_width)) ,_y, bg, fg))
+                            _x + self.mm2u((i-inverted) * (tab_real_width)) ,_y, bg, fg))
         else:
             for i in range(1,nb_tabs+1):
                 if (i % 2 == 0):
@@ -177,16 +172,16 @@ class BoxEffect():
 # Shape of each box pieces
 # ------------------------------------------------------------------#
 ### Bottom/top
+
     def _stackable_bottom(self, width, depth, tab_width, thickness, backlash):
-        points = [[thickness,0]]
-        points.extend(self.tabs(width-4*thickness, tab_width, thickness,direction=0,backlash=backlash,firstUp=True,lastUp=False))
-        points.extend([[0,thickness],[thickness,0]])
+        points = [[thickness,-thickness],[thickness,0]]
+        points.extend(self.tabs(width-4*thickness, tab_width, thickness,direction=0,backlash=backlash,firstUp=False,lastUp=False))
+        points.extend([[thickness,0],[0,thickness]])
         points.extend(self.tabs(depth-4*thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=False,lastUp=False))
-        points.extend([[-thickness,0],[0,2*thickness]])
-        points.extend(self.tabs(width-4*thickness, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=False))
-        points.extend([[0,-thickness],[-thickness,0]])
+        points.extend([[0,thickness],[-thickness,0]])
+        points.extend(self.tabs(width-4*thickness, tab_width, thickness,direction=2,backlash=backlash,firstUp=False,lastUp=False))
+        points.extend([[-thickness,0],[0,-thickness]])
         points.extend(self.tabs(depth-4*thickness, tab_width, thickness,direction=3,backlash=backlash,firstUp=False,lastUp=False))
-        points.extend([[thickness,0]])
         return points
 
     def _bottom(self, width, depth, tab_width, thickness, backlash):
@@ -240,11 +235,12 @@ class BoxEffect():
         points.extend(self.tabs(depth, tab_width, thickness,direction=2,backlash=backlash,firstUp=True,lastUp=True,inverted=True,cutOff=True))
         points.extend(self.tabs(height - (2 * thickness), tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         return points
+
     def _stackable_side_without_top(self, depth, height, tab_width, thickness, backlash):
         # print("_side_without_top")
         stackheight=thickness
         stackoffset=depth/10
-        points = [[thickness+stackoffset, 0],[0,-stackheight],[depth-(5*thickness)-stackoffset,0],[0,stackheight],[stackoffset,0]]
+        points = [[stackoffset, 0],[0,-stackheight],[depth-2*stackoffset-2*thickness,0],[0,stackheight],[stackoffset,0]]
         points.extend(self.tabs(height - thickness, tab_width, thickness,direction=1,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
         points.extend([[0,2*thickness+stackheight],[-stackoffset,0],[0,-stackheight],[-depth + (2 * thickness)+2*stackoffset, 0],[0,stackheight],[-stackoffset,0],[0,-stackheight-2*thickness]])
         points.extend(self.tabs(height - thickness, tab_width, thickness,direction=3,backlash=backlash,firstUp=True,lastUp=True,inverted=True))
@@ -335,9 +331,13 @@ class BoxEffect():
         layout['front_pos'][1] += thickness
         layout['back_pos'][1] += thickness
         layout['left_pos'][1] += 4*thickness
+        layout['left_pos'][0] -= 3*thickness
         layout['right_pos'][1] += 4*thickness
+        layout['right_pos'][0] -= 2*thickness
         layout['H_layer_pos'][1] += 6 * thickness
+        layout['H_layer_pos'][0] += thickness
         layout['V_layer_pos'][1] += 6 * thickness
+        layout['V_layer_pos'][0] += thickness
 
         ### Calcultate tab size and number
         nb_tabs = math.floor((width) / tab_size)
@@ -356,23 +356,23 @@ class BoxEffect():
 
         ### Draw each side of the box
         paths = []
-        top_part = 0
         if(lid):
-            top_part = thickness
+            if layeroffset<thickness:
+                layeroffset=thickness
             paths = self.lid(prefix,paths,_x,_y,layout,width,depth,thickness,bg,fg)
         paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_bottom(width, depth, tab_size, thickness, backlash))),'%s_bottom' % prefix,_x + self.mm2u(layout['bottom_pos'][0]),_y + self.mm2u(layout['bottom_pos'][1]), bg, fg))
 
         paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_front_without_top(width, height, tab_size, thickness, backlash))),'%s_front' % prefix,_x + self.mm2u(layout['front_pos'][0]),_y + self.mm2u(layout['front_pos'][1]), bg, fg))
-        paths = self.holes(width-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['front_pos'][0]-tab_real_width+2*thickness),_y+ self.mm2u(layout['front_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
+        paths = self.holes(width-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['front_pos'][0]+2*thickness),_y+ self.mm2u(layout['front_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
 
         paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_front_without_top(width, height, tab_size, thickness, backlash))),'%s_back' % prefix,_x + self.mm2u(layout['back_pos'][0]),_y + self.mm2u(layout['back_pos'][1]), bg, fg))
-        paths = self.holes(width-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['back_pos'][0]-tab_real_width+2*thickness),_y+ self.mm2u(layout['front_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
+        paths = self.holes(width-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['back_pos'][0]+2*thickness),_y+ self.mm2u(layout['front_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
 
         paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_side_without_top(depth, height, tab_size, thickness, backlash))),'%s_left_side' % prefix,_x + self.mm2u(layout['left_pos'][0]),_y + self.mm2u(layout['left_pos'][1]), bg, fg))
-        paths = self.holes(depth-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['left_pos'][0]-tab_real_depth+2*thickness),_y+ self.mm2u(layout['left_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
+        paths = self.holes(depth-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['left_pos'][0]+2*thickness),_y+ self.mm2u(layout['left_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
 
         paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_side_without_top(depth, height, tab_size, thickness, backlash))),'%s_right_side' % prefix,_x + self.mm2u(layout['right_pos'][0]),_y + self.mm2u(layout['right_pos'][1]), bg,fg))
-        paths = self.holes(depth-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['right_pos'][0]-tab_real_depth+2*thickness),_y+ self.mm2u(layout['right_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
+        paths = self.holes(depth-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['right_pos'][0]+2*thickness),_y+ self.mm2u(layout['right_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
 
         paths = self.box_layer(layout,paths,prefix, _x, _y, bg, fg, width, depth, height,layeroffset, tab_size, thickness, backlash,segment_offset,lid)
 
