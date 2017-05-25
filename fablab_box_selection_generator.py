@@ -91,14 +91,14 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
 
         ### Pieces layout
         layout = {
-            'bottom_pos' : [self.options.thickness,self.options.thickness],
-            'top_pos' : [2 * self.options.thickness + width,self.options.thickness],
-            'front_pos' : [self.options.thickness,depth+2*self.options.thickness],
-            'back_pos' : [width+2*self.options.thickness,depth + 2*self.options.thickness],
-            'left_pos' : [self.options.thickness,depth + height+3*self.options.thickness],
-            'right_pos' : [depth+2*self.options.thickness,depth + height+3*self.options.thickness],
-            'H_layer_pos' : [self.options.thickness,depth + 2*height+4*self.options.thickness],
-            'V_layer_pos' : [3*self.options.thickness+width,depth + 2*height+4*self.options.thickness]
+            'bottom_pos' : [0,self.options.thickness],
+            'top_pos' : [self.options.thickness + width,self.options.thickness],
+            'front_pos' : [0,depth+2*self.options.thickness],
+            'back_pos' : [width+self.options.thickness,depth + 2*self.options.thickness],
+            'left_pos' : [2*self.options.thickness,depth + height+3*self.options.thickness],
+            'right_pos' : [depth+3*self.options.thickness,depth + height+3*self.options.thickness],
+            'H_layer_pos' : [2*self.options.thickness,depth + 2*height+4*self.options.thickness],
+            'V_layer_pos' : [4*self.options.thickness+width,depth + 2*height+4*self.options.thickness]
         }
         
         ### Switch statemetn to decide wich type of box to generate

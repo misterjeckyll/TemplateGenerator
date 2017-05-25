@@ -331,13 +331,11 @@ class BoxEffect():
         layout['front_pos'][1] += thickness
         layout['back_pos'][1] += thickness
         layout['left_pos'][1] += 4*thickness
-        layout['left_pos'][0] -= 3*thickness
+        layout['left_pos'][0] -= thickness
         layout['right_pos'][1] += 4*thickness
-        layout['right_pos'][0] -= 2*thickness
+        layout['right_pos'][0] -= thickness
         layout['H_layer_pos'][1] += 6 * thickness
-        layout['H_layer_pos'][0] += thickness
         layout['V_layer_pos'][1] += 6 * thickness
-        layout['V_layer_pos'][0] += thickness
 
         ### Calcultate tab size and number
         nb_tabs = math.floor((width) / tab_size)
@@ -369,10 +367,10 @@ class BoxEffect():
         paths = self.holes(width-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['back_pos'][0]+2*thickness),_y+ self.mm2u(layout['front_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
 
         paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_side_without_top(depth, height, tab_size, thickness, backlash))),'%s_left_side' % prefix,_x + self.mm2u(layout['left_pos'][0]),_y + self.mm2u(layout['left_pos'][1]), bg, fg))
-        paths = self.holes(depth-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['left_pos'][0]+2*thickness),_y+ self.mm2u(layout['left_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
+        paths = self.holes(depth-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['left_pos'][0]+thickness),_y+ self.mm2u(layout['left_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
 
         paths.append(self.getPath(self.toPathString(self.mm2u(self._stackable_side_without_top(depth, height, tab_size, thickness, backlash))),'%s_right_side' % prefix,_x + self.mm2u(layout['right_pos'][0]),_y + self.mm2u(layout['right_pos'][1]), bg,fg))
-        paths = self.holes(depth-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['right_pos'][0]+2*thickness),_y+ self.mm2u(layout['right_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
+        paths = self.holes(depth-(4*thickness),tab_size,thickness,0,paths,prefix,_x+ self.mm2u(layout['right_pos'][0]+thickness),_y+ self.mm2u(layout['right_pos'][1]+height-thickness),bg,fg,width,depth,height,backlash,stack=True)
 
         paths = self.box_layer(layout,paths,prefix, _x, _y, bg, fg, width, depth, height,layeroffset, tab_size, thickness, backlash,segment_offset,lid)
 
@@ -386,8 +384,8 @@ class BoxEffect():
 
         #For each horizontal piece -> draw layer shape and tabbed hole line
         for i,horizontal_offset in enumerate(segment_offset['H']):
-            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['left_pos'][0]+horizontal_offset-thickness/2),_y+ self.mm2u(layout['left_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
-            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['right_pos'][0]+horizontal_offset-thickness/2),_y+ self.mm2u(layout['right_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['left_pos'][0]+depth-horizontal_offset-thickness/2-thickness),_y+ self.mm2u(layout['left_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['right_pos'][0]+horizontal_offset-thickness/2-thickness),_y+ self.mm2u(layout['right_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
             paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(width,height,tab_size,thickness,backlash))),
                                       '%s_Horizontal_layer_%s' % (prefix,i),
                                       _x + self.mm2u(layout['H_layer_pos'][0]),
@@ -400,7 +398,7 @@ class BoxEffect():
                                           _y + self.mm2u(layout['H_layer_pos'][1]+i*height), bg,fg))
 
         for i,vertical_offset in enumerate(segment_offset['V']):
-            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['front_pos'][0]+vertical_offset-thickness/2),_y+ self.mm2u(layout['front_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
+            paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['front_pos'][0]+width-vertical_offset-thickness/2),_y+ self.mm2u(layout['front_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
             paths = self.holes(height-thickness,tab_size,thickness,1,paths,prefix,_x+ self.mm2u(layout['back_pos'][0]+vertical_offset-thickness/2),_y+ self.mm2u(layout['back_pos'][1]+layeroffset),bg,fg,width,depth,height,backlash)
             paths.append(self.getPath(self.toPathString(self.mm2u(self._layer(depth,height,tab_size,thickness,backlash))),
                                       '%s_Vertical_layer_%s' % (prefix,i),
