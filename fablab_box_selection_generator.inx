@@ -10,12 +10,12 @@
     <param name='active-tab' type="notebook">
         <!-- Input Page -->
         <page name="input" _gui-text="Générer une Boite">
-            <param name="path_id" type="string" _gui-text="ID svg de la boite (nom))">box</param>
+            <param name="path_id" type="string" _gui-text="Nom de la boite">box</param>
             <param name="height" type="float" precision="2" min="0" max="9999999"  _gui-text="Hauteur (mm)">50.00</param>
-            <param name="thickness" type="float" precision="2" min="0" max="9999999"  _gui-text="Epaisseur du matériau (mm)">3.00</param>
-            <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches (mm)">10.00</param>
-            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Matière enlevé par la découpe (~0.1mm)">0.</param>
-            <param name="layeroffset" type="float" precision="2" min="0" max="9999999"  _gui-text="Espace libre au dessus des compartiments (mm)">0.</param>
+            <param name="thickness" type="float" precision="2" min="0" max="9999999"  _gui-text="Epaisseur du matériau(mm)">3.00</param>
+            <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches(mm)">10.00</param>
+            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Ajustement de découpe(mm)">0.</param>
+            <param name="layeroffset" type="float" precision="2" min="0" max="9999999"  _gui-text="Espace libre au dessus des compartiments(mm)">0.</param>
             <!-- Top edge type -->
             <param name="type" type="enum" gui-text="Type de Boite" gui-description="Type de boite">
                 <item value="o">Boite ouverte</item>
@@ -26,32 +26,31 @@
         </page>
         <!-- Info page-->
         <page name="info" _gui-text="Info">
-            <param name="info" type="description" xml:space="preserve">
-Matière enlevé par le laser:
+            <param name="info" type="description" xml:space="preserve">Informations sur le fonctionement de l'outil
 
-- Dépend du matériaux et du laser, ajuste le jeu entre les assemblages. Permet de sérrer les assemblages avec une valeur > 0.
+- Ajustement:  dépend du matériau et du laser, permet de serrer les assemblages avec une valeur > 0.
 
-Sélection :
+- Un rectangle indique les dimensions extérieures de la boite
 
--Un rectangle indique les dimensions extérieures de la boite
--La fenêtre alignement et distribution permet de placer les segments intercalaires à interval régulier
+- Espace libre : détermine la hauteur des compartiments internes
+
+- La largeur des encoches doit être au moin 1.5 fois l'épaisseur du materiau.
 
             </param>
         </page>
         <!-- Help page -->
         <page name="help" _gui-text="Aide">
-            <param name="help" type="description" xml:space="preserve">Cet utilitaire génére le chemin
-d'une boite à encoche à partir d'une sélection pour la découpe laser:
+            <param name="help" type="description" xml:space="preserve">Cet outil génère le chemin d'une boite à encoche pour la découpe laser à partir d'une sélection:
 - Un rectangle donne la largeur et la profondeur de la boite
-- Une cloison interne pour toute ligne droite croisant le rectangle
+- Toute ligne droite croisant le rectangle donne une cloison interne
 
 Exemple d'utilisation :
 1) Tracer un rectangle avec l'outil rectangle (f4)
 2) Indiquer la largeur (W) et la hauteur (H) du rectangle dans les champs de mesure
 3) Selectionner l'outil dessin en ligne (shift+f6) avec le mode "ligne paraxial"
-3) Tracer un segment Horizontal qui traverse le rectangle et validez avec Entrer
-4) Indiquer la hauteur de la boite et la largeur des encoches
-5) Tout selectionner avant d'appliquer
+3) Tracer un segment Horizontal ou vertical (clicker+glisser+relacher) qui traverse le rectangle et valider avec Entrer
+4) Indiquer la hauteur, le type de boite et la largeur des encoches
+5) Tout sélectionner avant d'appliquer
             </params>
         </page>
     </param>

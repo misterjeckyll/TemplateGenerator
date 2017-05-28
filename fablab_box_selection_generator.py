@@ -39,6 +39,9 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         # Call the base class constructor.
         BaseEffect.__init__(self)
 
+        ### The list of shapes to be drawed
+        self.list_of_paths = []
+
         self.OptionParser.add_option('-i', '--path_id', action='store',type='string',   dest='path_id',     default='box',  help='Id of svg path')
         self.OptionParser.add_option('--height',        action='store',type='float',    dest='height',      default=50,     help='Hauteur de la boite')
         self.OptionParser.add_option('--thickness',     action='store',type='float',    dest='thickness',   default=3,      help='Epaisseur du materiau')
@@ -63,6 +66,7 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         width, depth = 0,0
         height = self.options.height
         layeroffset = self.options.layeroffset
+        thickness = self.options.thickness
         document_height = self.unittouu(self.document.getroot().get('height'))
 
         ### Gather incoming params from selection
@@ -77,8 +81,8 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
             elif node.tag == inkex.addNS('path','svg'):
                 # Gather the selected segment position in a dictionnary
                 pathrepr = node.get('d').replace(',',' ').split()
-                segment_pos['V'].append(float(pathrepr[1])) if 'V' in pathrepr else None
-                segment_pos['H'].append(float(pathrepr[2])) if 'H' in pathrepr else None
+                segment_pos['V'].append(float(pathrepr[1])) if ('V'or'v') in pathrepr else None
+                segment_pos['H'].append(float(pathrepr[2])) if ('H' or 'h') in pathrepr else None
 
         if(width==0 or depth == 0):# exit if no rectangle selected
             inkex.debug("Aucun rectangle trouvé dans la selection")
@@ -91,25 +95,33 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
 
         ### Pieces layout
         layout = {
-            'bottom_pos' : [0,self.options.thickness],
-            'top_pos' : [self.options.thickness + width,self.options.thickness],
-            'front_pos' : [0,depth+2*self.options.thickness],
-            'back_pos' : [width+self.options.thickness,depth + 2*self.options.thickness],
-            'left_pos' : [2*self.options.thickness,depth + height+3*self.options.thickness],
-            'right_pos' : [depth+3*self.options.thickness,depth + height+3*self.options.thickness],
-            'H_layer_pos' : [2*self.options.thickness,depth + 2*height+4*self.options.thickness],
-            'V_layer_pos' : [4*self.options.thickness+width,depth + 2*height+4*self.options.thickness]
+            'bottom_pos' : [0,0],
+            'top_pos' : [thickness + width,0],
+            'front_pos' : [0,depth+thickness],
+            'back_pos' : [width+thickness,depth + thickness],
+            'left_pos' : [2*thickness,depth + height+2*thickness],
+            'right_pos' : [depth+3*thickness,depth + height+2*thickness],
+            'H_layer_pos' : [2*thickness,depth + 2*height+3*thickness],
+            'V_layer_pos' : [4*thickness+width,depth + 2*height+3*thickness]
         }
         
-        ### Switch statemetn to decide wich type of box to generate
-        switch = {
-            'f':self.box_with_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,lid=False),
-            'o':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,lid=False),
-            'oc':self.box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,lid=True),
-            'oe':self.box_without_top_stackable_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,lid=False)
-        }
-        for shape in switch[self.options.type]:
-            inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape)
+        ### Decide wich type of box to generate
+        arg =self.options.type
+        if arg=='f':
+            self._box_with_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset)
+        elif arg=='o':
+            self._box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,False),
+        elif arg=='oc':
+            self._box_without_top_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,True),
+        elif arg=='oe':
+            self._box_without_top_stackable_selection(layout,self.options.path_id, centre[0], centre[1], bgcolor, fgcolor, width, depth, height, self.options.tab_size, self.options.thickness, self.options.backlash,segment_offset,layeroffset,False)
+
+        parent = {}
+        [parent.setdefault(group_name,inkex.etree.SubElement(self.current_layer, 'g', {inkex.addNS('label', 'inkscape'): self.options.path_id+"_"+group_name})) for group_name in ['bottom','top','front','back','left','right','Horizontal','Vertical']]
+
+        for shape in self.list_of_paths:
+            id_split=shape.get('id').split('_')
+            inkex.etree.SubElement(parent[id_split[1]], inkex.addNS('path', 'svg'), shape)
 
 if __name__ == '__main__':
     effect = BoxSelectionGeneratorEffect()
