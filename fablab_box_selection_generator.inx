@@ -26,7 +26,7 @@
         </page>
         <!-- Info page-->
         <page name="info" _gui-text="Info">
-            <param name="info" type="description" xml:space="preserve">Informations sur le fonctionement de l'outil
+            <param name="info" type="description" xml:space="preserve">Informations sur le fonctionement de l'extension :
 
 - Ajustement:  dépend du matériau et du laser, permet de serrer les assemblages avec une valeur > 0.
 
@@ -49,14 +49,13 @@
 Exemple d'utilisation :
 
 1) Tracez un rectangle avec l'outil rectangle (f4)
-2) Indiquez la largeur (ex:100mm) et la hauteur (ex:100mm) du rectangle dans les champs de mesure de la barre d'outil (W,H en haut)
+2) Indiquez la largeur et la hauteur (ex:100mm) du rectangle dans les champs de la barre d'outils (W,H en haut)
 
 3) Selectionnez l'outil dessin de segments (shift+f6) avec le mode "ligne paraxial"
-3) Tracez plusieurs segments Horizontals ou verticals qui traverse le rectangle (clicker+glisser+relacher+Entrer)
+3) Tracez un segment Horizontal ou vertical qui traverse le rectangle (clicker+glisser+relacher+Entrer)
 
-4) Indiquez l'epaisseur du matériau (ex:6), la hauteur de la boite (ex:50)
-5) Indiquez le type de boite (ex:Boite ouverte)
-6) Tout sélectionner avant d'appliquer
+4) Indiquez l'épaisseur du matériau (ex:6) et la hauteur de la boite (ex:50)
+5) Tout sélectionner avant d'appliquer
             </params>
         </page>
     </param>

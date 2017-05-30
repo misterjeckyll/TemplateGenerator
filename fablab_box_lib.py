@@ -19,7 +19,7 @@ class BoxEffect():
 # ------------------------------------------------------------------#
     def add(self,vectorlist,id,x_pos,y_pos):
         ### Add the svg representation of a list of vectors to the main list of shapes
-        self.list_of_paths.append(self.getPath(self.toPathString(self.mm2u(vectorlist)),self.prefix+'_'+id,x_pos,y_pos))
+        self.list_of_paths.append(self.getPath(self.toPathString(self.mm2u(vectorlist)),self.prefix+'_'+id,x_pos,y_pos,self.fg,self.bg))
         
     def _rotate_path(self, points, direction):
         if direction == 1:
@@ -48,9 +48,9 @@ class BoxEffect():
     def toPathString(self, arr, end=" z"):
         return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), end)
 
-    def getPath(self, path, path_id, _x, _y):
-        style = {'stroke': self.fg,
-                 'fill': self.bg if(self.bg) else 'none',
+    def getPath(self, path, path_id, _x, _y,fg,bg):
+        style = {'stroke': fg,
+                 'fill': bg if(bg) else 'none',
                  'stroke-width': 0.1}
         return {
             'style': simplestyle.formatStyle(style),
@@ -257,23 +257,25 @@ class BoxEffect():
 # Main Shapes of different types of box
 #------------------------------------------------------------------#
 
-    def box_with_top(self, _x, _y, width, depth, height, tab_width, thickness, backlash):
+    def box_with_top(self,prefix, _x, _y,fg,bg, width, depth, height, tab_width, thickness, backlash):
         paths = []
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_width, thickness, backlash))),self.prefix+'_bottom',_x,_y))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_width, thickness, backlash))),self.prefix+'_top' , _x + self.mm2u(2 * thickness + width), _y + self.mm2u(1 * thickness)))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_with_top(width, height, tab_width, thickness, backlash))),self.prefix+'_font' , _x + self.mm2u(2 * thickness + width), _y + self.mm2u(2 * thickness + depth)))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_with_top(width, height, tab_width, thickness, backlash))),self.prefix+'_back' , _x + self.mm2u(1 * thickness), _y + self.mm2u(2 * thickness + depth)))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_width, thickness, backlash))),self.prefix+'_left' , _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height)))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_width, thickness, backlash))),self.prefix+'_right' , _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height)))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_width, thickness, backlash))),'%s_bottom'% prefix,_x,_y,bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_width, thickness, backlash))),'%s_top' % prefix, _x + self.mm2u(2 * thickness + width), _y + self.mm2u(1 * thickness),bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_with_top(width, height, tab_width, thickness, backlash))),'%s_front'% prefix , _x + self.mm2u(2 * thickness + width), _y + self.mm2u(2 * thickness + depth),bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_with_top(width, height, tab_width, thickness, backlash))),'%s_back'% prefix , _x + self.mm2u(1 * thickness), _y + self.mm2u(2 * thickness + depth),bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_width, thickness, backlash))),'%s_left'% prefix , _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height),bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_with_top(depth, height, tab_width, thickness, backlash))),'%s_right' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height),bg,fg))
         return paths
 
-    def box_without_top(self, _x, _y, width, depth, height, tab_width, thickness, backlash):
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_width, thickness, backlash))),self.prefix+'_bottom' , _x + self.mm2u(1 * thickness), _y + self.mm2u(1 * thickness)))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_width, thickness, backlash))),self.prefix+'_font' , _x + self.mm2u(2 * thickness + width), _y + self.mm2u(2 * thickness + depth)))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_width, thickness, backlash))),self.prefix+'_back' , _x + self.mm2u(1 * thickness), _y + self.mm2u(2 * thickness + depth)))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_width, thickness, backlash))),self.prefix+'_left' , _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height)))
-        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_width, thickness, backlash))),self.prefix+'_right' , _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height)))
-        
+    def box_without_top(self,prefix, _x, _y,fg,bg, width, depth, height, tab_width, thickness, backlash):
+        paths = []
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._bottom(width, depth, tab_width, thickness, backlash))),'%s_bottom'% prefix , _x + self.mm2u(1 * thickness), _y + self.mm2u(1 * thickness),bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_width, thickness, backlash))),'%s_front' % prefix, _x + self.mm2u(2 * thickness + width), _y + self.mm2u(2 * thickness + depth),bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._front_without_top(width, height, tab_width, thickness, backlash))),'%s_back'% prefix , _x + self.mm2u(1 * thickness), _y + self.mm2u(2 * thickness + depth),bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_width, thickness, backlash))),'%s_left'% prefix , _x + self.mm2u(2 * thickness + depth), _y + self.mm2u(3 * thickness + depth + height),bg,fg))
+        paths.append(self.getPath(self.toPathString(self.mm2u(self._side_without_top(depth, height, tab_width, thickness, backlash))),'%s_right' % prefix, _x + self.mm2u(1 * thickness), _y + self.mm2u(3 * thickness + depth + height),bg,fg))
+        return paths
+
     def box_without_top_selection(self, _x, _y,segment_offset,layeroffset,lid):
         """ 
             * Draw a Box with internal parts or not
