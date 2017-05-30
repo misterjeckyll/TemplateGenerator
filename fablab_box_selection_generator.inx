@@ -12,10 +12,10 @@
         <page name="input" _gui-text="Générer une Boite">
             <param name="path_id" type="string" _gui-text="Nom de la boite">box</param>
             <param name="height" type="float" precision="2" min="0" max="9999999"  _gui-text="Hauteur (mm)">50.00</param>
-            <param name="thickness" type="float" precision="2" min="0" max="9999999"  _gui-text="Epaisseur du matériau(mm)">3.00</param>
-            <param name="tab_size" type="float" precision="2" min="0" max="9999999"  _gui-text="Largeur des encoches(mm)">10.00</param>
-            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Ajustement de découpe(mm)">0.</param>
-            <param name="layeroffset" type="float" precision="2" min="0" max="9999999"  _gui-text="Espace libre au dessus des compartiments(mm)">0.</param>
+            <param name="thickness" type="float" precision="2" min="0.1" max="9999999"  _gui-text="Epaisseur du matériau (mm)">3.00</param>
+            <param name="tab_size" type="float" precision="2" min="0.01" max="9999999"  _gui-text="Largeur des encoches (mm)">3.</param>
+            <param name="backlash" type="float" precision="2" min="0" max="9999999"  _gui-text="Ajustement de découpe (mm)">0.</param>
+            <param name="layeroffset" type="float" precision="2" min="0" max="9999999"  _gui-text="Espace libre au dessus des compartiments (mm)">0.</param>
             <!-- Top edge type -->
             <param name="type" type="enum" gui-text="Type de Boite" gui-description="Type de boite">
                 <item value="o">Boite ouverte</item>
@@ -34,23 +34,29 @@
 
 - Espace libre : détermine la hauteur des compartiments internes
 
-- La largeur des encoches doit être au moin 1.5 fois l'épaisseur du materiau.
+- Une largeur d'encoches trop grande par rapport à la longueur d'un côté donne un segment sans encoches.
+
+-> Cela arrive quand la boite est trop petite par rapport à l'épaisseur du materiau ou à la largeur des encoches indiquée
 
             </param>
         </page>
         <!-- Help page -->
         <page name="help" _gui-text="Aide">
-            <param name="help" type="description" xml:space="preserve">Cet outil génère le chemin d'une boite à encoche pour la découpe laser à partir d'une sélection:
+            <param name="help" type="description" xml:space="preserve">Cet outil génère le chemin d'une boite à encoche pour la découpe laser à partir d'une sélection :
 - Un rectangle donne la largeur et la profondeur de la boite
-- Toute ligne droite croisant le rectangle donne une cloison interne
+- Tout segment droit donne une cloison interne
 
 Exemple d'utilisation :
-1) Tracer un rectangle avec l'outil rectangle (f4)
-2) Indiquer la largeur (W) et la hauteur (H) du rectangle dans les champs de mesure
-3) Selectionner l'outil dessin en ligne (shift+f6) avec le mode "ligne paraxial"
-3) Tracer un segment Horizontal ou vertical (clicker+glisser+relacher) qui traverse le rectangle et valider avec Entrer
-4) Indiquer la hauteur, le type de boite et la largeur des encoches
-5) Tout sélectionner avant d'appliquer
+
+1) Tracez un rectangle avec l'outil rectangle (f4)
+2) Indiquez la largeur (ex:100mm) et la hauteur (ex:100mm) du rectangle dans les champs de mesure de la barre d'outil (W,H en haut)
+
+3) Selectionnez l'outil dessin de segments (shift+f6) avec le mode "ligne paraxial"
+3) Tracez plusieurs segments Horizontals ou verticals qui traverse le rectangle (clicker+glisser+relacher+Entrer)
+
+4) Indiquez l'epaisseur du matériau (ex:6), la hauteur de la boite (ex:50)
+5) Indiquez le type de boite (ex:Boite ouverte)
+6) Tout sélectionner avant d'appliquer
             </params>
         </page>
     </param>
