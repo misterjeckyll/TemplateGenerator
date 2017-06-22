@@ -40,15 +40,6 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         # Call the base class constructor.
         BaseEffect.__init__(self)
 
-        # The list of shapes to draw
-        self.list_of_paths = []
-        # svg object params
-        self.prefix = self.options.path_id
-        self.fg = "#FF0000"
-        self.bg = None
-        self.boxparams = []
-        self.layout = {}
-
         # Parameters
         self.OptionParser.add_option('-i', '--path_id', action='store', type='string', dest='path_id', default='box',
                                      help='Id of svg path')
@@ -66,6 +57,15 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
                                      help='espace libre au dessus des compartiements')
         self.OptionParser.add_option("", "--active-tab", action="store", type="string", dest="active_tab",
                                      default='title', help="Active tab.")
+
+        # The list of shapes to draw
+        self.list_of_paths = []
+        # svg object params
+        self.prefix = []
+        self.fg = "#FF0000"
+        self.bg = None
+        self.boxparams = []
+        self.layout = {}
 
         # ------------------------------------------------------------------#
 
@@ -94,6 +94,7 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
             exit()
 
         # Gather incoming params
+        self.prefix = self.options.path_id
         centre = self.view_center
         layeroffset = self.options.layeroffset
         height = self.options.height
