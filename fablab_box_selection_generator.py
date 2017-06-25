@@ -66,11 +66,9 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
         self.bg = None
         self.boxparams = []
         self.layout = {}
-
-        # ------------------------------------------------------------------#
-
+    # ------------------------------------------------------------------ #
     # Main function called when the extension is run.
-    # ------------------------------------------------------------------#
+
     def effect(self):
 
         # Get width, depth and intern layer position from selection
@@ -95,8 +93,6 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
 
         # Gather incoming params
         self.prefix = self.options.path_id
-        centre = self.view_center
-        layeroffset = self.options.layeroffset
         height = self.options.height
         backlash = self.options.backlash
         thickness = self.options.thickness
@@ -122,7 +118,7 @@ class BoxSelectionGeneratorEffect(BaseEffect, BoxEffect):
             'Vlayer': [4 * free + width, depth + 2 * height + 3 * free]
         }
         # Decide wich type of box to generate
-        arglist = [centre[0], centre[1], segment_offset, layeroffset]
+        arglist = [self.view_center[0], self.view_center[1], segment_offset, self.options.layeroffset]
         optype = self.options.type
         if optype == 'f':
             self.box_with_top_selection(*arglist)

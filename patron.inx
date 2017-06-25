@@ -5,48 +5,70 @@
 	<dependency type="executable" location="extensions">patron.py</dependency>
 	<dependency type="executable" location="extensions">simplestyle.py</dependency>
 
-	<!-- start notebook -->
 	<param name='active-tab' type="notebook">
-	    <!-- page input -->
-		<page name="input" _gui-text="Créer un patron de t-shirt">
-
-            <param name="units" type="optiongroup" appearance="minimal" _gui-text="Unité de mesure">
+         <!-- Adapted T-shirt template -->
+		<page name="input" _gui-text="Générer votre patron de t-shirt">
+            <!-- input unit -->
+            <param name="units" type="optiongroup" appearance="minimal" _gui-text="Unité des champs de mesures">
                 <option value="cm">cm</option>
                 <option value="mm">mm</option>
                 <option value="in">in</option>
                 <option value="pt">pt</option>
                 <option value="px">px</option></param>
-            <param name="type" type="optiongroup" appearance="minimal" _gui-text="Patron de T-shirt:">
-                <option value="perso">Personnalisé</option>
-                <option value="fem">Femme</option>
-                <option value="masc">Homme</option></param>
-            <param name="hip" type="float"   min="1.0"    max="10000"  precision="2"  _gui-text="Tour de hanche:">88</param>
-            <param name="waist" type="float"   min="1.0"    max="10000"  precision="2"  _gui-text="Tour de taille:">64</param>
-            <param name="chest" type="float"   min="1.0"    max="10000"  precision="2"  _gui-text="Tour de poitrine:">80</param>
-            <param name="height" type="float"   min="1.0"    max="10000"  precision="2"  _gui-text="Hauteur creux de taille - hanche:">25</param>
 
+            <!-- body measurements -->
+            <_param name="measurements" type = "description" xml:space="preserve">Prendre la mesure du tour bien droit, serré mais pas trop</param>
+            <param name="neck" type="float" min="1.0" max="10000" precision = "2" _gui-text = "1) Largeur du cou">80</param>
+            <param name="shoulder" type="float" min="1.0" max="10000" precision = "2" _gui-text = "2) Largeur d'épaule à épaule">80</param>
+            <param name="chest" type="float" min="1.0" max="10000" precision="2" _gui-text="3) Tour de poitrine:">80</param>
+            <param name="waist" type="float" min="1.0" max="10000" precision="2" _gui-text="4) Tour de taille:">64</param>
+            <param name="hip" type="float" min="1.0" max="10000" precision="2" _gui-text="5) Tour de hanche:">88</param>
+
+            <_param name="HSP" type = "description" xml:space="preserve">Le HSP est le point haut d'épaule, prendre la mesure près du cou</param>
+            <param name="hsptochest" type="float" min="1.0" max="10000" precision="2" _gui-text="6) Longueur HSP -> poitrine:">25</param>
+            <param name="hsptowaist" type="float" min="1.0" max="10000" precision="2" _gui-text="7) Longueur HSP -> taille:">25</param>
+            <param name="hsptohip" type="float" min="1.0" max="10000" precision="2" _gui-text="8) Longueur HSP -> hanches:">25</param>
+            <param name="bicep" type="float" min="1.0" max="10000" precision="2" _gui-text="9) Tour du biceps:">25</param>
+            <param name="sleeve" type="float" min="1.0" max="10000" precision="2" _gui-text="10) Longueur de la manche:">25</param>
+            <param name="ease" type="float" min="0" max="10000" precision="2" _gui-text="Flottement entre la peau et le vetement:">20</param>
 		</page>
-		<!-- page size info -->
-		<page name="sizeguide" _gui-text="Guide de taille">
+		<!-- Measurment help -->
+		<page name="measurements_guide" _gui-text="Guide de mesure">
+		<_param name="title" type="description" xml:space="preserve"></_param>
+		</page>
+
+		<page name="sizeguide" _gui-text="Utiliser un patron standard">
 			<_param name="title" type="description" xml:space="preserve">Guide de taille femme (cm)</_param>
-            <_param name="size" type="description"   xml:space="preserve">                      34    |      36      |      38      |      40      |    42</_param>
+            <_param name="size" type="description" xml:space="preserve">                      34    |      36      |      38      |      40      |    42</_param>
 		    <_param name="hanche" type="description" xml:space="preserve">Hanche:   88  cm |  93  cm  |  98  cm  |  103 cm  |  108 cm</_param>
 		    <_param name="taille" type="description" xml:space="preserve">Taille:       64  cm |  69  cm  |  74  cm  |  79  cm   |  84  cm</_param>
 		    <_param name="poitrine" type="description" xml:space="preserve">Poitrine:   80  cm |  85  cm  |  90  cm  |  95  cm   |  100 cm</_param>
 
 		    <_param name="title" type="description" xml:space="preserve">
 Guide de taille Homme (cm)</_param>
-            <_param name="size" type="description"   xml:space="preserve">                      34    |      36      |      38      |      40      |    42</_param>
+            <_param name="size" type="description" xml:space="preserve">                      34    |      36      |      38      |      40      |    42</_param>
 		    <_param name="hanche" type="description" xml:space="preserve">Hanche:   94  cm |  98  cm  |  102 cm |  106 cm |  110 cm</_param>
 		    <_param name="taille" type="description" xml:space="preserve">Taille:       78  cm |  82  cm  |  86  cm  |  90  cm   |  94  cm</_param>
 		    <_param name="poitrine" type="description" xml:space="preserve">Poitrine:   90  cm |  94  cm  |  98  cm  |  95  cm   |  100 cm</_param>
+
+		    <param name="type" type="optiongroup" appearance="minimal" _gui-text="Patron généré :">
+                <option value="perso">Patron généré avec les mesures</option>
+                <option value="fem36">Patron Femme taille 36</option>
+                <option value="fem38">Patron Femme taille 38</option>
+                <option value="fem40">Patron Femme taille 40</option>
+                <option value="masc34">Patron Homme taille 34</option>
+                <option value="masc36">Patron Homme taille 36</option>
+                <option value="masc38">Patron Homme taille 38</option>
+                <option value="masc40">Patron Homme taille 40</option>
+                <option value="masc42">Patron Homme taille 42</option></param>
 		</page>
 		<!-- page help -->
 		<page name="help" _gui-text="Aide">
 			<_param name="use2" type="description" xml:space="preserve">
-Cet utilitaire permet de générer un patron de T-shirt personnalisé à taille réelle,
-imprimable ensuite avec un traceur numérique ou à découper directement à la découpeuse laser.
-Vous pouver sélectionner un modele feminin ou masculin de t-shirt standard
+Plus d'informations sur le site : https://fablab.ledome.info/#!/projects/generateur-de-t-shirt
+Cet utilitaire permet de générer un patron de T-shirt adapté à la morphologie à taille réelle,
+imprimable avec un traceur numérique ou à découper à la découpeuse laser.
+Vous pouvez sélectionner un modele feminin ou masculin de t-shirt standard
 
 
 
