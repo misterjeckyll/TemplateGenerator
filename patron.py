@@ -8,17 +8,35 @@ or a printer.
 import inkex
 import pturtle
 import simplestyle
-
+import xml.etree.ElementTree as etree
 __version__ = '0.1'
 
 inkex.localize()
 
 
-# ---------------------------------------------------- #
-# Utility functions
-# ---------------------------------------------------- #
+# ----------------------------------------------------------------#
+#                       UTILITY FUNCTIONS
+# ----------------------------------------------------------------#
+# SVG element generation routine
+def draw_svg_square(w, h, x, y, parent):
+    style = {'stroke': 'none',
+             'stroke-width': '1',
+             'fill': '#000000'
+             }
+
+    attribs = {
+        'style': simplestyle.formatStyle(style),
+        'height': str(h),
+        'width': str(w),
+        'x': str(x),
+        'y': str(y)
+    }
+    inkex.etree.SubElement(parent, inkex.addNS('rect', 'svg'), attribs)
+
+
 def points_to_svgd(p, close=True):
-    """ convert list of points (x,y) pairs
+    """ 
+        convert list of points (x,y) pairs
         into a closed SVG path list
     """
     f = p[0]
@@ -32,7 +50,8 @@ def points_to_svgd(p, close=True):
 
 
 def points_to_bbox(p):
-    """ from a list of points (x,y pairs)
+    """ 
+        from a list of points (x,y pairs)
         - return the lower-left xy and upper-right xy
     """
     llx = urx = p[0][0]
@@ -50,7 +69,8 @@ def points_to_bbox(p):
 
 
 def points_to_bbox_center(p):
-    """ from a list of points (x,y pairs)
+    """ 
+        from a list of points (x,y pairs)
         - find midpoint of bounding box around all points
         - return (x,y)
     """
@@ -67,6 +87,7 @@ class Patron(inkex.Effect):
         Printed, this Svg template is used as a support for sewing a t-shirt 
         with the perfect morphology.
     """
+
     def __init__(self):
         """
             Define how the options are mapped from the inx file
@@ -74,11 +95,22 @@ class Patron(inkex.Effect):
         """
         inkex.Effect.__init__(self)
 
-        # path attributes
-        self.topgroup = None
-        self.path_color = '#000000'  # black
-        self.path_fill = 'none'  # no fill - just a line
-        self.path_stroke_width = 2  # can also be in form '1mm'
+        self.doc_center = None
+        self.offset_style = {
+            'stroke': '#000000',  # black
+            'fill': 'none',  # no fill - just a line
+            'stroke-width': '1'  # can also be in form '2mm'
+        }
+        self.sewing_style = {
+            'stroke': '#000000',  # black
+            'fill': 'none',  # no fill - just a line
+            'stroke-width': '1',  # can also be in form '2mm'
+            'stroke-linecap':'butt',
+            'stroke-linejoin':'miter',
+            'stroke-miterlimit':'10',
+            'stroke-dasharray':'9.883,9.883',
+            'stroke-dashoffset':'0'
+        }
 
         # Define the list of parameters defined in the .inx file
         self.OptionParser.add_option("-t", "--type", type="string", dest="type", default='perso',
@@ -95,11 +127,11 @@ class Patron(inkex.Effect):
                                      help="Waist measurement")
         self.OptionParser.add_option("-c", "--chest", type="float", dest="chest", default=80,
                                      help="Chest measurement")
-        self.OptionParser.add_option("--hsptochest", type="float", dest="hspchest", default=80,
+        self.OptionParser.add_option("--hsptochest", type="float", dest="hsp_to_chest", default=80,
                                      help="Lenght HSP to chest")
-        self.OptionParser.add_option("--hsptowaist", type="float", dest="hspwaist", default=80,
+        self.OptionParser.add_option("--hsptowaist", type="float", dest="hsp_to_waist", default=80,
                                      help="Lenght HSP to waist")
-        self.OptionParser.add_option("--hsptohip", type="float", dest="hsphip", default=80,
+        self.OptionParser.add_option("--hsptohip", type="float", dest="hsp_to_hip", default=80,
                                      help="Lenght HSP to hip")
         self.OptionParser.add_option("-b", "--bicep", type="float", dest="bicep", default=23,
                                      help="Bicep measurement")
@@ -110,28 +142,28 @@ class Patron(inkex.Effect):
         self.OptionParser.add_option("--active-tab", type="string", dest="active_tab",
                                      default='title', help="Active tab.")
 
-# ----------------------------------------------------------------#
-#                       UTILITY METHODS
-# ----------------------------------------------------------------#
-    @staticmethod
-    def getunittouu(param):
+    # ----------------------------------------------------------------#
+    #                       UTILITY METHODS
+    # ----------------------------------------------------------------#
+    def getunittouu(self, param):
         """for 0.48 and 0.91 compatibility"""
+        if type(param) is tuple:
+            return tuple([self.getunittouu(val) for val in param])
         try:
             return inkex.unittouu(param)
         except AttributeError:
             return self.unittouu(param)
 
-    @staticmethod
-    def calc_unit_factor(ui_unit):
+    def calc_unit_factor(self, ui_unit):
         """ return the scale factor for all dimension conversions.
             - The document units are always irrelevant as
               everything in inkscape is expected to be in 90dpi pixel units
         """
         # namedView = self.document.getroot().find(inkex.addNS('namedview', 'sodipodi'))
         # doc_units = self.getunittouu(str(1.0) + namedView.get(inkex.addNS('document-units', 'inkscape')))
-        unit_factor = Patron.getunittouu(str(1.0) + ui_unit)
+        unit_factor = self.getunittouu(str(1.0) + ui_unit)
         return unit_factor
-        
+
     @staticmethod
     def detect_size(optype, mesure_list):
         """Return us standard size corresponding to mesure in cm"""
@@ -144,67 +176,55 @@ class Patron(inkex.Effect):
         size_found = []
         for standard_size, sizelist in sizedic[optype].items():
             for mesure, pair in zip(mesure_list, sizelist):
-                if Patron.getunittouu(str(pair[1]) + "cm") > mesure >= Patron.getunittouu(str(pair[0]) + "cm"):
+                if self.getunittouu(str(pair[1]) + "cm") > mesure >= Patron.getunittouu(str(pair[0]) + "cm"):
                     size_found.append(standard_size)
         return size_found[-1]
-    
-    @staticmethod
-    def get_color_string(longcolor, verbose=False):
-        """ 
-            Convert the long into a #RRGGBB color value
-            - verbose=true pops up value for us in defaults
-            conversion back is A + B*256^1 + G*256^2 + R*256^3
-        """
-        inkex.debug("%s =" % longcolor) if verbose else none
-        
-        longcolor = long(longcolor) & 0xFFFFFFFF if long(longcolor) < 0 else long(longcolor)
-        hex_color = hex(longcolor)[2:-3]
-        hex_color = '#' + hex_color.rjust(6, '0').upper()
-        
-        inkex.debug("  %s for color default value" % hex_color) if verbose else none
-        return hex_color
 
     @staticmethod
-    def add_text(node, text, position, text_height=12, color = '#000000'):
+    def add_text(node, text, transform = '', text_height=12, color='#000000'):
         """Create and insert a single line of text into the svg under node."""
         text_style = {'font-size': '%dpx' % text_height, 'font-style': 'normal', 'font-weight': 'normal',
                       'fill': color, 'font-family': 'Bitstream Vera Sans,sans-serif',
                       'text-anchor': 'middle', 'text-align': 'center'}
         text_attribs = {
             inkex.addNS('label', 'inkscape'): 'Annotation',
-            'style': simplestyle.formatStyle(line_style),
-            'x': str(position[0]),
-            'y': str((position[1] + text_height) * 1.2)
+            'style': simplestyle.formatStyle(text_style)
         }
+        if transform != "translate(0,0)":
+            text_attribs['transform']=transform
         text_node = inkex.etree.SubElement(node, inkex.addNS('text', 'svg'), text_attribs)
         text_node.text = text
-
 
     # ----------------------------------------------------------------------#
     #                               MAIN
     # ----------------------------------------------------------------------#
     def effect(self):
 
-        # Gather incoming params
-        template_type = self.options.type
+        # Get Document attribs
+        root = self.document.getroot()  # top node in document xml
+        docwidth = self.getunittouu(root.get('width'))
+        docheight = self.getunittouu(root.get('height'))
+        self.doc_center = (str(docwidth / 2), str(docheight / 2))
+
+        # Saved Template drawing
+        template_id = self.options.type
+        if template_id != "perso":
+            self.saved_template(template_id)
+
+        # Gather incoming measurements and convert it to intern unit
         hip = self.getunittouu(str(self.options.hip) + self.options.units)
         waist = self.getunittouu(str(self.options.waist) + self.options.units)
         chest = self.getunittouu(str(self.options.chest) + self.options.units)
-        hsp_to_chest = self.getunittouu(str(self.options.hsptochest) + self.options.units)
-        hsp_to_waist = self.getunittouu(str(self.options.hsptowaist) + self.options.units)
-        hsp_to_hip = self.getunittouu(str(self.options.hsptohip) + self.options.units)
-
-        # Standard Template drawing
-        if type != "perso":
-            standard(template_type)
-        else:
-            self.front(hip, waist, chest, height)
+        hsp_to_chest = self.getunittouu(str(self.options.hsp_to_chest) + self.options.units)
+        hsp_to_waist = self.getunittouu(str(self.options.hsp_to_waist) + self.options.units)
+        hsp_to_hip = self.getunittouu(str(self.options.hsp_to_hip) + self.options.units)
+        bicep = self.getunittouu(str(self.options.bicep) + self.options.units)
+        sleeve = self.getunittouu(str(self.options.sleeve) + self.options.units)
 
     def front(self, hip, waist, chest, height):
-        """ Draw the front piece of the T-shirt template
-        """
+        """ Draw the front piece of the T-shirt template using a turtle """
         # calculate unit factor for units defined in dialog.
-        unit_factor = self.calc_unit_factor()
+        unit_factor = self.calc_unit_factor(self.options.units)
         # Turtle direction
         t = pturtle.pTurtle()
         t.pu()
@@ -225,7 +245,7 @@ class Patron(inkex.Effect):
              'stroke': self.path_color, 'stroke-linecap': 'butt',
              'fill': self.path_fill}
 
-        inkex.etree.SubElement(self.topgroup,
+        inkex.etree.SubElement(self.current_layer,
                                inkex.addNS('path', 'svg'),
                                {'d': t.getPath(), 'style': simplestyle.formatStyle(s)})
 
@@ -235,181 +255,76 @@ class Patron(inkex.Effect):
                       "poitrine:" + str(chest), "hauteur:" + str(height)]
         [self.add_text(self.topgroup, txt, [0, y * txtheight - 22], txtheight) for y, txt in enumerate(piece_info)]
 
+    # ---------------------------------------------------------------------- #
+    #                            SAVED TEMPLATES
+    # ---------------------------------------------------------------------- #
+    def saved_template(self, template_id):
+        """
+        Read 'template.xml' file and get the saved templates data : 
+        Paths and Name of it's shapes.
+         Then draw the selected template in the document.
+        """
 
-def standard(self, type):
-    # Paths of a fixed template with standard size
-    savedtemplate = {
-        "masc": {
-            "xs": {
-                "front": {
-                    "sewing": "m 775.88653,383.14728 c -170.97776,-0.16829 -320.03951,-0.007 -491.01727,-0.14469 -0.46653,-63.85719 0.65068,-127.71427 0.28001,-191.57211 56.81276,-0.31876 90.25761,0.46625 146.71972,6.98318 42.76128,3.10151 85.79191,0.16969 128.07216,-6.6024 36.51545,-4.43899 73.15322,-8.54465 109.14191,-16.3488 14.20291,11.90209 32.97199,16.18663 50.98168,18.05039 43.76875,5.32554 87.98179,-0.9839 130.69679,-10.62759 1.1949,0.21709 2.70627,-1.24952 3.49635,-0.5723 15.43745,42.65715 31.02733,85.25942 46.49198,127.90717 -23.04983,3.37338 -46.47988,10.78229 -64.09531,26.63541 -13.89168,12.30593 -24.24769,28.54972 -29.55614,46.33171 z",
-                    "offset": "m 238.41168,407.75491 -1.7272,-241.04564 52.07,0.0504 41.402,0.4318 h 16.637 l 16.6116,0.35595 23.876,2.28565 29.43824,2.5908 32.99496,2.1082 16.25564,0.68615 14.22435,-0.1016 24.13071,-1.52435 28.75139,-2.9972 26.44069,-3.78425 34.85092,-3.96275 18.46439,-2.4384 18.415,-2.76825 16.07961,-2.74355 16.002,-3.2512 13.99469,-3.937 3.91231,5.2324 3.9123,3.7338 4.318,3.2766 4.49439,2.4384 4.77661,1.9304 9.271,2.159 0.55739,0.22895 0.71261,0.12665 13.589,1.9812 13.63839,1.52435 13.4373,0.71085 9.06639,-0.15205 9.06639,-0.43215 16.99331,-1.4478 23.52322,-3.0226 21.89339,-3.8862 16.91569,-3.7338 22.27439,-5.715 64.90053,178.18064 -25.19892,3.0734 -16.129,2.74355 -7.92339,1.8542 -7.79992,2.3368 -5.23169,2.159 -5.08,2.54 -4.90008,2.84445 -4.699,3.175 -6.52992,5.48675 -5.91608,6.1722 -3.33022,4.2418 -2.97039,4.4958 -2.33539,4.2164 -2.06022,4.34305 -2.13431,5.18195 -1.80269,5.30825 -1.97909,8.63564 -0.83961,8.10331 z"
-                },
-                "back": {
-                    "sewing": "m -62.587912,145.29544 c -7.643948,66.31157 -24.996096,133.90028 -65.401498,188.23458 -3.70417,4.56992 -7.59593,8.99206 -11.73717,13.17167 L 8.18552,721.56302 c 103.40375,-31.34122 211.10873,-50.0764 319.30214,-50.51825 71.56598,2.28981 145.42599,20.16117 202.44982,65.34052 7.73224,6.2311 15.09207,12.93063 21.94726,20.11718 147.00746,-32.29466 297.48154,-43.03958 446.38226,-62.92334 184.9226,-14.82313 369.2252,16.64494 554.0179,17.17017 49.3203,0.51315 42.0443,-1.99266 91.3629,-2.26914 0,-230.27859 -0.241,-378.17505 -0.241,-568.09292 H -62.044944 Z",
-                    "offset": "m -127.08011,70.387231 c 0.28,0 -2.26,43.969999 -3.02,49.648999 -5.67,42.359 -10.14,85.152 -27.54,124.638 -6.85,15.548 -13.95,31.224 -24.35,44.781 -11.49,14.975 -26.53,23.651 -42.98,32.212 l 193.4,489.816 41.18,-17.784 30.02,-9.288 30.39,-7.992 65.09,-14.904 30.6,-6.192 30.74,-5.328 56.38,-6.192 25.99,-2.304 26.06,-1.08 23.11,0.648 23.04,1.656 22.97,2.448 22.75,3.888 21.53,6.552 40.68,16.488 0.65,0.216 1.58,0.648 11.6,7.632 11.01,8.568 18.79,16.704 10.66,12.672 9.86,16.56 35.36,-9 54.14,-11.664 82.15,-12.816 92.305,-12.024 70.631,-8.64 72.865,-9.288 23.759,-3.384 50.47201,-5.256 40.681,-2.304 40.752,-1.152 47.879,0.288 47.88,1.44 94.969,4.536 96.407,8.208 62.208,3.384 62.281,2.232 54.719,1.08 54.721,0.072 17.279,-0.576 146.16,-1.368 -8.279,-708.479999 z"
-                },
-                "sleeve": {
-                    "sewing": "m 1438.2884,313.66491 c -14.3571,-41.66096 -30.096,-83.56611 -33.6078,-127.83124 -3.392,-44.98206 1.9898,-90.098243 9.3275,-134.460605 6.4589,-31.650128 21.3588,-60.7442626 30.6138,-91.598705 12.1403,4.411657 24.7546,7.420972 37.3797,10.087469 27.6382,5.625696 55.7586,8.446363 83.6575,12.267066 0.3899,0.420645 -0.2003,1.855889 0.071,2.67684 0.023,103.793199 0.4347,207.585765 0.5973,311.378745 -42.8411,3.84256 -85.6811,8.99226 -127.6567,18.5932 -0.1274,-0.37095 -0.2549,-0.74186 -0.3824,-1.11277 z",
-                    "offset": "m 1590.2571,-39.225184 0.8128,358.090604 -25.6032,2.10608 -25.6036,2.49061 -20.4974,2.48709 -20.447,2.82222 -20.3966,3.14678 -20.3196,3.63361 -17.8311,4.11339 -17.7543,4.49791 -19.0754,-55.44961 -2.0828,-6.01839 -8.255,-26.6453 -3.7338,-13.43731 -3.3782,-13.51244 -2.8956,-15.44285 -2.1336,-15.5956 -1.397,-13.3604 -0.8382,-13.4366 0.05,-18.542 0.5334,-18.288 0.4321,-5.842 1.4986,-16.7132 2.0825,-23.139397 2.7689,-21.615399 1.8542,-11.607447 2.2352,-11.557353 2.54,-10.3124 2.921,-10.210799 6.1468,-18.542 13.0556,-32.994599 0.2032,-0.5334 4.2415,-13.1826 4.191,-15.3924 3.5306,-16.281399 17.5006,6.8834 17.6787,6.349999 13.6652,3.683 13.8426,2.9718 24.867,3.937 24.9932,3.3528 z"
-                },
-                "neck":{
-                    "sewing":"",
-                    "offset":"m 0,0 h 127.512 v -294.839 -252.287 -375.839 -404.28 H 0 v 404.28 147.671 228.168 252.287 z"
-                }
-            },
-            "s": {
-                "front": {
-                    "sewing": "",
-                    "offset": ""
-                },
-                "back": {
-                    "sewing": "",
-                    "offset": ""
-                },
-                "sleeve": {
-                    "sewing": "m -14.456832,38.425795 0.8128,382.092195 -25.603199,2.1343 -25.603553,2.46239 -20.497446,2.49061 -20.447,2.8187 -20.39655,3.1503 -20.31965,3.65478 -17.83115,4.09222 -17.75425,4.51908 -25.17175,-67.74038 -2.2352,-5.969 -7.82285,-24.003 -3.55635,-12.11439 -3.25085,-12.192 -3.48015,-16.43556 -2.7178,-16.58585 -1.82845,-14.2748 -1.24495,-14.3002 -0.381,-9.9314 -0.0505,-9.906 0.53305,-18.288 0.4318,-5.842 1.4986,-16.7132 2.8194,-24.7396 3.5306,-23.0632 2.28635,-12.3952 2.667,-12.319 2.99685,-10.9728 3.3782,-10.8712 7.0866,-19.684996 10.79535,-25.4762 4.24145,-10.109552 4.87715,-14.020447 4.9022,-16.383 4.19065,-17.323152 17.5006,6.883753 17.67875,6.349999 13.6652,3.683 13.84265,2.9464 24.86695,3.962047 24.993246,3.3528 z",
-                    "offset": ""
-                },
-                "neck":{
-                    "sewing":"",
-                    "offset":""
-                }
-            },
-            "m": {
-                "front": {
-                    "sewing": "",
-                    "offset": ""
-                },
-                "back": {
-                    "sewing": "",
-                    "offset": ""
-                },
-                "sleeve": {
-                    "sewing": "m -14.456832,26.436995 0.8128,406.096605 -25.603199,2.10608 -25.603553,2.49061 -20.497446,2.48708 -20.447,2.82223 -20.39655,3.14677 -20.31965,3.63362 -17.83115,4.11338 -17.75425,4.49792 -31.69955,-79.96061 -2.36185,-5.91608 -7.2136,-21.38892 -6.2738,-21.6923 -4.03895,-17.42299 -3.302,-17.6022 -2.28565,-15.1384 -1.6764,-15.2146 -0.635,-10.541 -0.25435,-10.5664 0.53375,-18.288 0.43145,-5.842 1.4986,-16.7132 3.55635,-26.3398 4.29225,-24.51064 2.6924,-13.18296 3.14995,-13.081 3.429,-11.6332 3.8608,-11.5316 3.83505,-10.490196 4.14055,-10.3632 8.1534,-18.059047 8.71185,-19.558352 5.5118,-14.8336 5.588,-17.3736 4.8514,-18.4149992 17.5006,6.8833998 17.67875,6.3499999 13.6652,3.6829999 13.84265,2.9717996 24.86695,3.9624 24.993246,3.3528 z",
-                    "offset": ""
-                },
-                "neck":{
-                    "sewing":"",
-                    "offset":""
-                }
-            },
-            "l": {
-                "front": {
-                    "sewing": "",
-                    "offset": ""
-                },
-                "back": {
-                    "sewing": "",
-                    "offset": ""
-                },
-                "sleeve": {
-                    "sewing": "m -14.456832,14.448196 0.8128,430.072794 -25.603199,2.1343 -25.603553,2.46239 -20.497446,2.49061 -20.447,2.8187 -20.39655,3.1503 -20.31965,3.63009 -17.83115,4.11691 -17.75425,4.49439 -38.45595,-92.12439 -2.36185,-5.91961 -6.47735,-18.82069 -5.76545,-19.02531 -4.62315,-18.41464 -3.8862,-18.61785 -2.7178,-16.00235 -2.08245,-16.12865 -0.91475,-11.17635 -0.4572,-11.2014 0.5334,-18.28765 0.43215,-5.842 1.4986,-16.7132 1.98085,-13.9954 2.33715,-13.9192 5.0038,-25.98455 3.14925,-13.96965 3.60715,-13.843 3.86045,-12.319 4.31835,-12.166949 4.29225,-11.074047 4.59775,-10.947399 5.10505,-10.744553 13.56395,-28.904846 6.14645,-15.672153 6.29955,-18.3380939 5.51145,-19.4817991 17.5006,6.883399 17.67875,6.3500002 13.6652,3.6822944 13.84265,2.97250549 24.86695,3.93629441 24.993246,3.3527999 z",
-                    "offset": ""
-                },
-                "neck":{
-                    "sewing":"",
-                    "offset":""
-                }
-            },
-            "xl": {
-                "front": {
-                    "sewing": "",
-                    "offset": ""
-                },
-                "back": {
-                    "sewing": "",
-                    "offset": ""
-                },
-                "sleeve": {
-                    "sewing": "m -14.456832,2.4339959 0.8128,454.1026041 -25.603199,2.10608 -25.603553,2.49061 -20.497446,2.46239 -20.447,2.84692 -20.39655,3.14677 -20.31965,3.63362 -17.83115,4.08869 -17.75425,4.52261 -45.0088,-104.44691 -2.4384,-5.89139 -5.84235,-16.1537 -5.28285,-16.3583 -5.207,-19.40631 -4.44535,-19.60809 -3.175,-16.9164 -2.48885,-17.018 -1.2192,-11.811 -0.635,-11.8364 0.1016,-9.144 0.43145,-9.144 0.43215,-5.842 1.4986,-16.7132 2.3114,-14.7828 2.74285,-14.732 5.76615,-27.4574 3.58105,-14.732 4.03895,-14.605 4.318,-12.9794 4.80025,-12.826643 4.72475,-11.658953 5.07965,-11.505847 1.75295,-3.556352 9.4996,-18.9992 9.19445,-19.1516 6.80755,-16.4845992 6.9596,-19.3547998 6.19725,-20.523199 17.5006,6.858 17.67875,6.349999 13.6652,3.683 13.84265,2.9718 24.86695,3.9624001 24.993246,3.3528 z",
-                    "offset": ""
-                },
-                "neck":{
-                    "sewing":"",
-                    "offset":""
-                }
-            }
-        },
-        "fem": {
-            "s": {
-                "front": {
-                    "sewing": "m 11.341121,627.92796 c 49.918054,1.2347 154.869439,-1.1501 234.420829,-21.082 0,0 -4.11586,-76.96553 -17.52142,-143.9933 -13.40555,-67.02778 -16.22778,-118.76969 -5.17384,-240.35984 -17.16863,-2.35197 -46.33171,-26.10556 -46.56666,-61.14803 -0.23531,-35.04283 14.81666,-84.901967 28.69247,-118.063077 -22.10752,-10.34803 -49.38924,-23.51864 -55.97419,-26.34086 -13.40555,28.69283 -23.28333,43.50949 -37.86469,55.50394 -14.581365,11.99444 -39.906223,27.853917 -99.172888,27.618617 v 527.86455 h -0.839611",
-                    "offset": "M 0.16059435,657.57576 C 0.06921435,479.9761 -1.2001996,264.11163 -1.2245196,86.511913 c 27.4539736,0.71268 55.7333766,-0.2098 81.5013096,-10.73284 22.47499,-9.02169 39.55012,-28.33832 49.73395,-49.92991 4.27658,-8.82943 8.59698,-17.62086 12.65053,-26.55602005 26.83553,11.91341005 53.1442,24.96665005 79.81665,37.23598005 -15.99073,37.87613 -29.65163,77.522527 -32.38474,118.779287 -2.37654,22.32451 11.50521,46.06642 33.09099,53.35559 4.49079,0.80751 10.12259,1.58644 12.40027,6.14465 2.84854,5.91051 -0.0666,12.43509 0.047,18.59329 -5.79218,66.03325 -10.17697,133.06082 0.78737,198.7797 6.65301,39.41251 14.88315,78.66906 18.1602,118.57468 2.25408,22.08864 7.4705,65.59094 8.8136,87.75244 -51.12738,13.4591 -267.5020506,25.0954 -263.23200565,19.067 z"
-                },
-                "back": {
-                    "sewing": "m -55.747892,627.44608 c -49.918058,1.23472 -177.623638,-5.11528 -233.538838,-23.28333 -0.5292,-43.92083 11.443,-95.65252 20.9902,-163.3361 9.8778,-70.02639 10.0542,-96.83751 0.882,-218.19482 38.1,-10.93611 52.1525,-40.15775 49.5653,-80.96248 -2.2705,-35.80659 -5.3503,-66.851424 -19.2264,-100.012146 22.1075,-10.34803 49.8595,-21.51944 56.4444,-24.34167 28.0458,38.62917 74.78889,41.274652 124.883338,37.39445 V 627.44608",
-                    "offset": "m -297.75773,635.41026 c -1.1397,-49.12549 8.6756,-121.34456 15.7615,-169.65279 8.2858,-50.56441 13.91,-101.93116 10.5332,-153.21918 -1.2125,-30.67501 -4.0888,-61.26962 -5.8634,-91.90639 0.7646,-4.96813 5.7702,-8.09979 10.4886,-8.46577 17.3506,-5.14524 32.3024,-19.34208 36.4396,-37.2444 5.1294,-18.72696 2.3323,-38.36868 0.8047,-57.44979 -2.3619,-25.733974 -7.4368,-51.489644 -17.9507,-75.182986 -1.0001,-4.96252 3.2454,-9.60243 7.9551,-10.46603 20.7599,-9.29855 41.7237,-18.12964 62.7603,-26.7816504 12.2374,21.9032604 36.031,35.6217004 60.55517,38.8686304 20.862258,3.76357 42.172428,1.51712 63.256018,1.32598 5.77998,1.69895 8.56495,8.57342 7.26433,14.139372 -0.25608,192.566274 0.86025,404.265094 0.77272,596.831444 -84.173758,1.80926 -183.154738,-6.27444 -252.777138,-20.79644 z"
-                },
-                "sleeve": {
-                    "sewing": "m 449.82873,14.091784 c -30.27997,0 -51.50555,9.405055 -84.02002,58.441165 -20.4022,28.575001 -24.08061,43.215281 -78.99612,73.849791 43.83617,170.50914 39.36753,429.27163 39.36753,429.27163 H 593.4682 c 0,-9.525 -4.40973,-278.63552 22.57777,-436.32648 C 583.9432,123.92209 577.35789,116.98295 539.84598,74.296838 502.33406,31.610728 480.10906,14.091784 449.82873,14.091784 Z",
-                    "offset": "m 316.15891,584.81567 c 1.10172,-118.63397 -4.44095,-237.57802 -22.38658,-354.91762 -4.80416,-29.71762 -10.79701,-59.25022 -18.40268,-88.38761 21.72292,-12.32496 44.36223,-24.6201 60.54756,-44.099976 18.9085,-23.77579 32.94154,-51.63229 55.86547,-72.06196 23.00915,-21.3890998 58.544,-27.1050098 87.49449,-15.3979798 10.94109,4.2465598 20.73745,10.9491298 29.49769,18.6841398 27.99278,23.35346 48.62534,53.95863 75.26048,78.671806 10.43711,9.46342 22.48427,17.00318 35.38767,22.68212 2.5254,1.21188 5.0594,2.40584 7.5896,3.60777 -17.1512,101.62676 -20.4633,204.91728 -23.1338,307.7738 -0.9103,48.04793 -0.9533,116.27651 -0.4396,164.32933 l -287.29135,0.53901 c 0.004,-0.23886 0.007,-21.18397 0.0109,-21.42283 z"
-                }
-            },
-            "m": {
-                "front": {
-                    "sewing": "m 7.35965,602.3346 c 49.91805,1.23472 155.22221,-0.58561 249.17858,-24.81086 0,0 -6.46748,-87.96162 -19.63773,-155.57501 -13.0683,-67.09516 -20.34364,-117.24216 -6.23253,-239.65498 -26.92858,-3.4103 -53.50474,-24.92939 -53.73969,-59.97222 C 176.69333,87.27905 193.86161,33.65683 207.73742,0.49572 185.62989,-9.85231 153.05686,-25.96261 146.47191,-28.78483 132.59576,0.02512 119.66045,19.42789 105.07909,31.42234 90.49773,43.41678 66.98791,53.99976 7.95655,56.93981 V 602.3346 h -0.5969",
-                    "offset": "M -2.39635,632.37265 C -2.35315,449.76353 -1.92457,230.2245 -1.92111,47.6154 27.24955,45.89586 57.32631,44.68643 84.47637,32.80562 c 17.42442,-8.08045 29.83,-23.80555 39.36736,-40.03894 6.62952,-11.17459 12.31136,-22.84882 17.97005,-34.54739 26.42434,11.9809 52.27369,25.18657 78.63499,37.29316 -16.09385,38.94353 -30.35863,79.39243 -33.56143,121.63806 -1.40814,16.72625 5.27114,34.67287 19.20434,44.7318 10.06418,7.73843 22.93463,11.67529 35.57957,11.15039 -7.63678,64.73288 -13.15685,130.54134 -3.96028,195.38707 6.95382,45.96847 17.34603,91.46255 21.74078,137.81937 2.85415,24.402 8.72818,77.33439 9.7536,101.88667 -27.71374,15.81773 -209.49082,31.4313 -271.6017,24.24684 z"
-                },
-                "back": {
-                    "sewing": "m -99.121775,619.86981 c -49.918055,1.23472 -166.216895,-1.29469 -248.179165,-26.10555 0,0 6.64422,-84.90338 18.34444,-152.4 11.67518,-67.35269 16.05139,-118.70972 6.87917,-240.06704 41.98055,-11.81805 59.09028,-35.63055 55.91528,-81.1978 -2.49344,-35.791756 -2.64584,-61.206926 -21.34306,-103.657387 22.10753,-10.3480301 54.09283,-24.1652701 60.67778,-26.9875 35.98333,43.56806 74.08333,40.39306 126.941435,38.92303 V 619.86981 Z",
-                    "offset": "m -224.5,-22.113281 c -25.34347,10.905423 -50.60647,22.01031536 -75.58789,33.728515 20.99948,40.481785 26.33535,87.530201 24.24942,132.665156 -2.20218,18.49773 -14.90142,35.15377 -32.38028,41.75477 -7.59336,3.44336 -15.64012,5.73258 -23.70117,7.78711 7.29342,85.438 9.47226,172.41137 -7.94991,256.6988 -7.84515,49.91465 -13.20798,118.33246 -17.31181,168.68429 82.94335,24.8655 180.30443,32.08877 266.388779,31.21765 0.835618,-36.2622 1.475854,-199.35056 1.649999,-265.44254 -0.0029,-122.25651 0.07339,-244.51302 0.02177,-366.769532 -33.850898,-0.14723 -70.258808,5.856424 -101.291238,-10.952824 -13.06714,-7.2413373 -23.42823,-18.093561 -32.68337,-29.976864 l -0.91829,0.395922 z"
-                },
-                "sleeve": {
-                    "sewing": "m 432.37291,4.789728 c -30.27997,0 -53.91644,11.465278 -86.43091,60.501388 -20.40219,28.574999 -27.4574,43.275244 -82.37325,73.907294 46.74305,170.74444 39.86389,446.44027 39.86389,446.44027 h 278.51804 c 0,-23.63611 -3.35138,-296.86249 23.63612,-454.55451 C 573.13089,120.85361 562.13622,108.68278 524.6243,65.996671 487.11238,23.310561 462.65324,4.789728 432.37291,4.789728 Z",
-                    "offset": "m 293.34001,594.79574 c 2.036,-119.95661 -2.6138,-240.28621 -19.9342,-359.07947 -5.2678,-34.13628 -12.1235,-68.03944 -21.3891,-101.33687 22.6658,-12.8158 46.0106,-25.5609 63.6399,-45.176796 19.4691,-22.557668 33.0809,-49.927544 55.2698,-70.201576 12.7477,-12.299668 29.3204,-20.498752 46.8241,-23.197009 17.5375,-2.871646 35.9246,0.0466 51.6931,8.255001 17.0207,8.77838 31.1329,22.08858 44.4767,35.6072 21.0056,21.697068 39.0349,46.355634 62.3254,65.77714 9.7558,7.68115 21.1702,12.79098 32.8393,16.72387 3.465,1.32181 6.2149,4.53024 6.2469,8.34583 0.3998,5.6411 -1.8939,11.01013 -2.2292,16.57457 -14.4725,96.87923 -17.6289,194.95679 -20.3362,292.74955 -1.0949,51.88507 -1.2115,123.92157 -0.8821,175.81558 l -298.561,-1.00326 c 0.01,-0.24047 0.011,-19.6133 0.017,-19.85376 z"
-                }
-            },
-            "l": {
-                "front": {
-                    "sewing": "m 11.392064,467.7852 c 49.976968,1.99672 170.038886,-0.70556 265.524186,-29.16061 0,0 -10.34838,-97.13385 -23.51828,-164.75077 -13.0683,-67.0948 -21.40232,-118.41691 -7.29121,-240.829385 -26.92824,-3.410303 -59.8544,-22.577777 -60.08935,-57.620604 -0.23495,-35.042475 16.3449,-93.250841 33.98379,-126.411951 -22.10717,-10.34803 -60.55995,-28.92778 -67.1449,-31.75 -13.87616,28.80995 -31.86782,52.44641 -46.44954,64.44086 -14.581364,11.99444 -35.619267,20.107976 -94.650982,23.048026 v 0 563.034434 h -0.363714",
-                    "offset": "M 0.84476711,496.10162 C 0.9504946,307.60324 2.221059,83.954684 2.2415942,-104.54369 c 28.1321218,-1.90821 57.0129098,-2.272 83.6316818,-12.54845 14.509924,-6.15925 25.513974,-18.36416 34.802434,-30.7902 11.17753,-14.74935 20.05564,-31.0975 27.82672,-47.86753 28.66048,13.00328 56.87675,26.97568 85.42941,40.18982 -21.30413,39.30618 -34.42144,83.139666 -37.73137,127.681422 -0.29218,11.715609 3.43187,24.0040931 12.14189,32.2584932 11.87812,12.3970338 29.04657,18.5124368 45.86042,19.5198998 2.47562,0.603215 3.57522,3.580835 2.65657,5.818999 -7.6545,63.623358 -11.82929,128.427346 -2.26047,192.057206 7.46256,46.63222 17.67091,92.85185 23.16747,139.80178 3.82499,28.00483 11.41875,80.07383 14.54606,108.1642 -41.81025,20.01189 -307.126196,42.88809 -291.46764289,26.35967 z"
-                },
-                "back": {
-                    "sewing": "m -53.976312,472.72941 c -66.498608,3.70416 -179.828468,-1.32292 -261.937498,-29.63334 0,0 6.39089,-79.27657 17.28612,-146.75555 10.93611,-67.73333 25.57638,-144.10972 8.81944,-259.646191 37.21805,-4.58611 67.64514,-25.4882 63.5,-77.434719 -2.85366,-35.764991 -7.67292,-75.67083 -23.8125,-108.12604 22.10749,-10.34803 60.26644,-26.10555 66.85139,-28.92778 31.27974,40.21667 77.6993,44.94954 128.322908,40.30486 v 610.21876 h 0.97014",
-                    "offset": "m -331.99539,472.28896 c 5.47066,-72.94086 19.02485,-166.79705 30.82879,-238.95009 8.88033,-64.87057 9.14894,-131.06159 -0.89824,-195.818961 -0.53196,-3.69391 -1.08839,-7.38418 -1.64412,-11.07458 17.24628,-0.58292 35.42037,-4.23029 48.97317,-15.6382 12.66585,-10.97499022 17.56872,-28.55142 16.30916,-44.85744 -1.34997,-29.60285 -5.30535,-59.2262 -13.87796,-87.655219 -3.62518,-11.24614 -8.3494,-22.16278 -14.31311,-32.36042 28.37212,-13.51661 57.46217,-25.43676 86.39888,-37.67557 14.10515,23.0863 39.28321,38.11905 65.6456,42.26648 23.134808,3.59308 46.740818,2.03835 69.945768,-0.4258 0.002,204.772797 -0.45474,447.14561 -0.41739,651.91841 -83.707478,6.73615 -214.196028,-13.17585 -286.950548,-29.72861 z"
-                },
-                "sleeve": {
-                    "sewing": "m 494.76074,-155.62672 c -30.27997,0 -57.79664,13.40556 -90.31111,62.441665 -20.4022,28.575 -30.10358,42.862499 -85.01944,73.494193 C 368.7016,149.70279 358.64743,446.3889 358.64743,446.3889 h 291.04166 c 0,-39.51111 -1.76388,-317.67638 25.22362,-475.368401 -31.86783,-6.466416 -48.09561,-21.519444 -85.60717,-64.205554 -37.51228,-42.686105 -64.26483,-62.441665 -94.5448,-62.441665 z",
-                    "offset": "M 348.46683,455.53801 C 351.63656,334.18493 348.26642,212.33214 332.18447,91.915303 326.63363,52.656376 319.03601,13.593985 307.76509,-24.440242 c 24.83353,-14.08298 50.65273,-27.999425 69.78386,-49.696192 18.80913,-22.039086 32.37605,-48.622056 54.80113,-67.487356 20.16724,-17.84492 48.27197,-27.56166 75.10446,-22.81273 20.47423,3.39894 38.47379,15.04506 53.80724,28.53586 28.93464,24.8021 50.0972,57.395768 79.91496,81.24375 10.80135,8.254717 23.62925,14.040661 36.99055,16.443864 3.60087,0.890933 6.78398,4.038935 6.62285,7.934745 0.27194,5.359371 -1.8865,10.404422 -2.175,15.712845 -14.88077,99.554465 -18.40081,200.384216 -21.47314,300.874706 -1.37364,56.64087 -1.71376,134.21409 -1.55618,190.86988 l -311.14311,0.44496 c 0.008,-0.243 0.0161,-21.84308 0.0241,-22.08608 z"
-                }
-            }
-        }
-    }
+        # From user params get the wanted type and size
+        type, size = template_id.split('_')
 
-    # Draw each pieces of the template
-    style = {'stroke': self.path_color,
-             'fill': self.path_fill,
-             'stroke-width': self.path_stroke_width}
+        # Parse the xml file
+        template_tree = etree.parse("template.xml")
+        root = template_tree.getroot()
 
-    size = self.detectsize(type, [hip, waist, chest])
-    for name, piece in savedtemplate[type][size].items():
-        # This finds center of current view in inkscape
-        t = 'translate(%s,%s)' % (self.view_center[0], self.view_center[1])
-        group_attribs = {inkex.addNS('label', 'inkscape'): 'T-shirt_template_' + type + '_' + size + '_' + name,
-                         'transform': t,
-                         'info': 'hanche: ' + str(hip) + '; taille:' + str(waist) + '; poitrine:' + str(
-                             chest) + '; hauteur:' + str(height)}
-        # add the group to the document's current layer
-        piecegroup = inkex.etree.SubElement(self.current_layer, 'g', group_attribs)
+        # Find The selected template
+        for template in root.findall("./type[@name='%s']/template[@size='%s']"%(type, size)):
+            # Find useful data
+            info = 'T-shirt_template_%s_%s' % (type, size)
+            transform = template.find('transform')
 
-        sewing_path_attribs = {
-            inkex.addNS('label', 'inkscape'): 'T-shirt_template_' + type + '_' + size + '_' + name + '_sewing',
-            'style': simplestyle.formatStyle(style),
-            'd': piece["sewing"]}
+            # Creation of a main group for the Template
+            template_attribs = {
+                 inkex.addNS('label', 'inkscape'): info,
+                 'transform':transform.text if transform != None else ''
+             }
+            template_group = inkex.etree.SubElement(self.current_layer, 'g',template_attribs)
 
-        offset_path_attribs = {
-            inkex.addNS('label', 'inkscape'): 'T-shirt_template_' + type + '_' + size + '_' + name + '_offset',
-            'style': simplestyle.formatStyle(style),
-            'd': piece["offset"]}
+            # For each pieces of the template
+            for piece in template.findall('piece'):
+                # Find useful data
+                pieceinfo = info+"_"+piece.find('name').text
+                transform = piece.find('transform')
 
-        sewing_path = inkex.etree.SubElement(piecegroup, inkex.addNS('path', 'svg'), sewing_path_attribs)
-        offset_path = inkex.etree.SubElement(piecegroup, inkex.addNS('path', 'svg'), offset_path_attribs)
-        self.add_text(piecegroup, "Patron T-shirt - " + type + "-" + size + "-" + name + "-" + str(hip), [0, 0])
+                # Create a group for the piece
+                piece_attribs = {
+                 inkex.addNS('label', 'inkscape'): pieceinfo,
+                 'transform':transform.text if transform != None else ''
+                }
+                piece_group = inkex.etree.SubElement(template_group, 'g', piece_attribs)
 
+                # Add a text to display the piece info
+                self.add_text(piece_group,pieceinfo.replace('_',' '), piece.find('info').text, 15)
+
+                # For each paths of the piece
+                for part in piece.findall('part'):
+                    # Find useful data
+                    name = part.find('name').text
+                    partinfo = pieceinfo+"_"+name
+                    transform = part.find('transform')
+
+                    # Create a group for the shape
+                    part_attribs = {
+                     inkex.addNS('label', 'inkscape'): partinfo,
+                     'transform':transform.text if transform != None else ''
+                    }
+                    part_group = inkex.etree.SubElement(piece_group, 'g', part_attribs)
+
+                    # Add the path to the group
+                    path_attribs = {
+                        inkex.addNS('label', 'inkscape'): partinfo,
+                        'style':simplestyle.formatStyle(self.sewing_style if name == "sewing" or name == "lign" else self.offset_style ),
+                        'd':part.find('path').text
+                    }
+                    inkex.etree.SubElement(part_group, inkex.addNS('path','svg'), path_attribs)
 
 if __name__ == '__main__':
     e = Patron()
     e.affect()
 
-# Notes
+    # Notes

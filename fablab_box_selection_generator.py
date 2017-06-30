@@ -22,7 +22,7 @@ sys.path.append('/usr/share/inkscape/extensions')
 def print_(*arg):
     f = open("fablab_debug.log", "a")
     for s in arg:
-        s = str(unicode(s).encode('unicode_escape')) + " "
+        s = str(s) + " "
         f.write(s)
     f.write("\n")
     f.close()

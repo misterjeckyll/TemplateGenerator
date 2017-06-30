@@ -37,7 +37,7 @@
 		<_param name="title" type="description" xml:space="preserve"></_param>
 		</page>
 
-		<page name="sizeguide" _gui-text="Utiliser un patron standard">
+		<page name="sizeguide" _gui-text="Patron standard">
 			<_param name="title" type="description" xml:space="preserve">Guide de taille femme (cm)</_param>
             <_param name="size" type="description" xml:space="preserve">                      34    |      36      |      38      |      40      |    42</_param>
 		    <_param name="hanche" type="description" xml:space="preserve">Hanche:   88  cm |  93  cm  |  98  cm  |  103 cm  |  108 cm</_param>
@@ -53,14 +53,15 @@ Guide de taille Homme (cm)</_param>
 
 		    <param name="type" type="optiongroup" appearance="minimal" _gui-text="Patron généré :">
                 <option value="perso">Patron généré avec les mesures</option>
-                <option value="fem36">Patron Femme taille 36</option>
-                <option value="fem38">Patron Femme taille 38</option>
-                <option value="fem40">Patron Femme taille 40</option>
-                <option value="masc34">Patron Homme taille 34</option>
-                <option value="masc36">Patron Homme taille 36</option>
-                <option value="masc38">Patron Homme taille 38</option>
-                <option value="masc40">Patron Homme taille 40</option>
-                <option value="masc42">Patron Homme taille 42</option></param>
+                <option value="fem_34">Patron Femme taille 34</option>
+                <option value="fem_36">Patron Femme taille 36</option>
+                <option value="fem_38">Patron Femme taille 38</option>
+                <option value="fem_40">Patron Femme taille 40</option>
+                <option value="masc_34">Patron Homme taille 34</option>
+                <option value="masc_36">Patron Homme taille 36</option>
+                <option value="masc_38">Patron Homme taille 38</option>
+                <option value="masc_40">Patron Homme taille 40</option>
+                <option value="masc_42">Patron Homme taille 42</option></param>
 		</page>
 		<!-- page help -->
 		<page name="help" _gui-text="Aide">
