@@ -260,7 +260,7 @@ class Patron(inkex.Effect):
     # ---------------------------------------------------------------------- #
     def saved_template(self, template_id):
         """
-        Read 'template.xml' file and get the saved templates data : 
+        Read 'patron.xml' file and get the saved templates data : 
         Paths and Name of it's shapes.
          Then draw the selected template in the document.
         """
@@ -269,7 +269,7 @@ class Patron(inkex.Effect):
         type, size = template_id.split('_')
 
         # Parse the xml file
-        template_tree = etree.parse("template.xml")
+        template_tree = etree.parse("patron.xml")
         root = template_tree.getroot()
 
         # Find The selected template
