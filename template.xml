@@ -174,7 +174,7 @@
         </template>
         <template size="36">
             <piece>
-                <info>translate(-2102,-767)</info>
+                <info>rotate(90) translate(-127, -120)</info>
                 <name>front</name>
                 <part>
                     <name>sewing</name>
@@ -213,7 +213,7 @@
                 </part>
             </piece>
             <piece>
-                <info>translate(-448,-774)</info>
+                <info>rotate(90) translate(139, -120)</info>
                 <name>back</name>
                 <part>
                     <name>sewing</name>
@@ -251,8 +251,7 @@
                 </part>
             </piece>
             <piece>
-                <info>translate(1391, 2661)</info>
-                <transform>rotate(90,-383.20941,-188.20894)</transform>
+                <info>rotate(90) translate(9, 266)</info>
                 <name>sleeve</name>
                 <part>
                     <name>sewing</name>
@@ -313,38 +312,31 @@
                 </part>
             </piece>
             <piece>
-                <info>translate(0, 2834)</info>
+                <info>translate(411, -272)</info>
                 <name>NeckBand</name>
-                <transform>rotate(90,449.26424,462.94506)</transform>
                 <part>
                     <name>sewing</name>
-                    <transform>translate(0,2834.6499)</transform>
-                    <path>
-                        m 2331.605,-229.277 h 56.691 v -1008.664 h -56.691 z
-                    </path>
+                    <path>m 274.54186,-267.31102 v -19.99933 H 630.3761 v 19.99933 z</path>
                 </part>
                 <part>
                     <name>offset</name>
-                    <transform>translate(0,2834.6499)</transform>
-                    <path>
-                        M 2300.633,-199.301 H 2414.02 V -1237.942 H 2300.633 Z
-                    </path>
+                    <path>m 263.96699,-256.38479 v -40.00041 h 366.40946 v 40.00041 z</path>
                 </part>
                 <part>
                     <name>lign</name>
-                    <path>m 2394.332,2237.0019 h 19.844</path>
+                    <path>m 404.49496,-289.43971 v -7.00053</path>
                 </part>
                 <part>
                     <name>lign</name>
-                    <path>m 2367.297,2236.4819 h 19.844</path>
+                    <path>m 404.6784,-279.90237 v -7.00052</path>
                 </part>
                 <part>
                     <name>lign</name>
-                    <path>m 2332.605,2236.4819 h 19.844</path>
+                    <path>m 404.6784,-267.6638 v -7.00052</path>
                 </part>
                 <part>
                     <name>lign</name>
-                    <path>m 2300.633,2237.0019 h 19.844</path>
+                    <path>m 404.49496,-256.38479 v -7.00052</path>
                 </part>
             </piece>
         </template>
