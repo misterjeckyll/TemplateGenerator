@@ -342,8 +342,9 @@
         </template>
         <template size="38">
             <piece>
-                <info>rotate(90) translate(-127, -120)</info>
+                <info>rotate(90) translate(-15, -51)</info>
                 <name>front</name>
+                <transform>translate(0.226242,13.09231)</transform>
                 <part>
                     <name>sewing</name>
                     <path>
@@ -381,7 +382,7 @@
                 </part>
             </piece>
             <piece>
-                <info>rotate(90) translate(139, -120)</info>
+                <info>rotate(90) translate(262, -51)</info>
                 <name>back</name>
                 <part>
                     <name>sewing</name>
@@ -427,8 +428,9 @@
                 </part>
             </piece>
             <piece>
-                <info>rotate(90) translate(9, 266)</info>
+                <info>rotate(90) translate(104, 123)</info>
                 <name>sleeve</name>
+                <transform>translate(-35.529762)</transform>
                 <part>
                     <name>sewing</name>
                     <path>
@@ -488,8 +490,9 @@
                 </part>
             </piece>
             <piece>
-                <info>translate(411, -272)</info>
+                <info>translate(406, 436)</info>
                 <name>NeckBand</name>
+                <transform>rotate(90,318.14252,19.647407)</transform>
                 <part>
                     <name>sewing</name>
                     <path>m 588.59622,421.76201 v 19.99933 H 227.75006 v -19.99933 z</path>
