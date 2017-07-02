@@ -247,6 +247,7 @@ class Patron(inkex.Effect):
             ease = self.getunittouu(str(self.options.ease) + self.options.units)
             user_measurements = {
                 'ease': ease,
+                'shoulder_drop':self.getunittouu('1.5cm'),
                 'half_neck': (ease + float(self.getunittouu(str(self.options.neck) + self.options.units))) / 2,
                 'half_shoulder': (ease + float(self.getunittouu(str(self.options.shoulder) + self.options.units))) / 2,
                 'quarter_hip': (ease + float(self.getunittouu(str(self.options.hip) + self.options.units))) / 4,
@@ -273,26 +274,34 @@ class Patron(inkex.Effect):
         """
         front_group = inkex.etree.SubElement(parent, 'g', {inkex.addNS('label', 'inkscape'): info + "_front"})
 
-        path_points = [(0, 0), (0, um['hsp_to_hip'] + 10)]
-        draw_svg_line(path_points, front_group, self.normal_line)
+        Reference = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_structure"})
+        edge = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
 
-        draw_svg_line([(0, 0), (um['half_neck'], 0)], front_group, self.doted_line)
-        draw_svg_line([(um['half_neck'], 0), (0, um['hsp_to_hip'])], front_group, self.doted_line)
-        draw_svg_line([(0, self.getunittouu('1.5cm')), (um['half_shoulder'], 0)], front_group, self.doted_line)
-        draw_svg_line([(0, um['hsp_to_chest']), (um['quarter_chest'], 0)], front_group, self.doted_line)
-        draw_svg_line([(0, um['hsp_to_waist']), (um['quarter_waist'], 0)], front_group, self.doted_line)
-        draw_svg_line([(0, um['hsp_to_hip']), (um['quarter_hip'], 0)], front_group, self.doted_line)
+        # The Template structure reference
+        draw_svg_line([(0, 0), (0, um['hsp_to_hip'])], Reference, self.doted_line)
+        draw_svg_line([(0, 0), (um['half_neck'], 0)], Reference, self.doted_line)
+        draw_svg_line([(um['half_neck'], 0), (0, um['hsp_to_hip'])], Reference, self.doted_line)
+        draw_svg_line([(0, um['shoulder_drop']), (um['half_shoulder'], 0)], Reference, self.doted_line)
+        draw_svg_line([(0, um['hsp_to_chest']), (um['quarter_chest'], 0)], Reference, self.doted_line)
+        draw_svg_line([(0, um['hsp_to_waist']), (um['quarter_waist'], 0)], Reference, self.doted_line)
+        draw_svg_line([(0, um['hsp_to_hip']), (um['quarter_hip'], 0)], Reference, self.doted_line)
 
-        # The Main Template vertex
-        edge_vertex = {
+        # The template main vertexes
+        vertexes = {
             'neck': (um['half_neck'], 0),
-            'shoulder': (um['half_shoulder'], self.getunittouu('1.5cm')),
+            'shoulder': (um['half_shoulder'], um['shoulder_drop']),
             'chest': (um['quarter_chest'], um['hsp_to_chest']),
             'waist': (um['quarter_waist'], um['hsp_to_waist']),
             'hip': (um['quarter_hip'], um['hsp_to_hip'])
         }
-        for name, vertex in edge_vertex.items():
-            draw_svg_ellipse((3, 3), (vertex[0], vertex[1]), front_group, self.normal_line)
+        for name, vertex in vertexes.items():
+            draw_svg_ellipse((3, 3), (vertex[0], vertex[1]), Reference, self.normal_line)
+
+        # Template edge paths
+        # neck_drop = self.getunittouu('5cm')
+        draw_svg_ellipse((um['half_neck'], um['half_neck']), (0, 0), edge, self.normal_line, (0, pi/2))
+        draw_svg_line([(0, um['half_neck']), (0,um['hsp_to_hip']-um['half_neck'])], edge, self.normal_line)
+        draw_svg_line([vertexes['neck'],(um['half_shoulder']-um['half_neck'],um['shoulder_drop'])], edge, self.normal_line)
 
     # ---------------------------------------------------------------------- #
     #                         RENDER SAVED TEMPLATES
@@ -342,8 +351,8 @@ class Patron(inkex.Effect):
                 # For each paths of the piece
                 for part in piece.findall('part'):
                     # Find useful data
-                    name = part.find('name').text
-                    partinfo = pieceinfo + "_" + name
+                    label = part.find('name').text
+                    partinfo = pieceinfo + "_" + label
                     transform = part.find('transform')
 
                     # Create a group for the shape
@@ -357,7 +366,7 @@ class Patron(inkex.Effect):
                     path_attribs = {
                         inkex.addNS('label', 'inkscape'): partinfo,
                         'style': simplestyle.formatStyle(
-                            self.doted_line if name == "sewing" or name == "lign" else self.normal_line),
+                            self.doted_line if label == "sewing" or label == "lign" else self.normal_line),
                         'd': part.find('path').text
                     }
                     inkex.etree.SubElement(part_group, inkex.addNS('path', 'svg'), path_attribs)
