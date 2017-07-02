@@ -31,10 +31,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 
 import xml.etree.ElementTree as Etree
-import inkex
-import pturtle
-import simplestyle
 from math import pi
+
+import inkex
+import simplestyle
 
 __version__ = '1'
 
@@ -103,7 +103,7 @@ def draw_svg_ellipse(radius, center, parent, style, start_end=(0, 2 * pi), trans
         inkex.addNS('open', 'sodipodi'): 'true',  # all ellipse sectors we will draw are open
         inkex.addNS('type', 'sodipodi'): 'arc',
         'transform': transform
-                    }
+    }
     inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), circ_attribs)
 
 
@@ -245,56 +245,51 @@ class Patron(inkex.Effect):
         else:
             # Gather incoming measurements and convert it to internal unit (96dpi pixels)
             ease = self.getunittouu(str(self.options.ease) + self.options.units)
-
-            self.half_neck = (ease + float(self.getunittouu(str(self.options.neck) + self.options.units))) / 2
-            self.half_shoulder = (ease + float(self.getunittouu(str(self.options.shoulder) + self.options.units))) / 2
-
-            self.quarter_hip = (ease + float(self.getunittouu(str(self.options.hip) + self.options.units))) / 4
-            self.quarter_waist = (ease + float(self.getunittouu(str(self.options.waist) + self.options.units))) / 4
-            self.quarter_chest = (ease + float(self.getunittouu(str(self.options.chest) + self.options.units))) / 4
-
-            self.hsp_to_chest = ease + self.getunittouu(str(self.options.hsp_to_chest) + self.options.units)
-            self.hsp_to_waist = self.getunittouu(str(self.options.hsp_to_waist) + self.options.units)
-            self.hsp_to_hip = self.getunittouu(str(self.options.hsp_to_hip) + self.options.units)
-
-            self.bicephalf = (ease + float(self.getunittouu(str(self.options.bicep) + self.options.units))) / 2
-            self.sleeve = self.getunittouu(str(self.options.sleeve) + self.options.units)
-
+            user_measurements = {
+                'ease': ease,
+                'half_neck': (ease + float(self.getunittouu(str(self.options.neck) + self.options.units))) / 2,
+                'half_shoulder': (ease + float(self.getunittouu(str(self.options.shoulder) + self.options.units))) / 2,
+                'quarter_hip': (ease + float(self.getunittouu(str(self.options.hip) + self.options.units))) / 4,
+                'quarter_waist': (ease + float(self.getunittouu(str(self.options.waist) + self.options.units))) / 4,
+                'quarter_chest': (ease + float(self.getunittouu(str(self.options.chest) + self.options.units))) / 4,
+                'hsp_to_chest': ease + self.getunittouu(str(self.options.hsp_to_chest) + self.options.units),
+                'hsp_to_waist': self.getunittouu(str(self.options.hsp_to_waist) + self.options.units),
+                'hsp_to_hip': self.getunittouu(str(self.options.hsp_to_hip) + self.options.units),
+                'bicep_half': (ease + float(self.getunittouu(str(self.options.bicep) + self.options.units))) / 2,
+                'sleeve': self.getunittouu(str(self.options.sleeve) + self.options.units)
+            }
             # Main group for the Template
             info = 'Patron_T-shirt_%s_%s_%s' % (self.options.hip, self.options.waist, self.options.chest)
             template_group = inkex.etree.SubElement(self.current_layer, 'g', {inkex.addNS('label', 'inkscape'): info})
 
-            self.front(template_group, info)
+            self.front(template_group, user_measurements, info)
 
     # -------------------------------------------------------------- #
     #                          FRONT PIECE
     # -------------------------------------------------------------- #
-    def front(self, parent, info="T-shirt_Template"):
+    def front(self, parent, um, info="T-shirt_Template"):
         """
-        Render the main piece of the template
-        :param parent: the parent node in the document
-        :param info: template string info
-        :return: 
+        Render the front piece of the template
         """
-        front_group = inkex.etree.SubElement(parent, 'g',{inkex.addNS('label', 'inkscape'): info + "_front"})
+        front_group = inkex.etree.SubElement(parent, 'g', {inkex.addNS('label', 'inkscape'): info + "_front"})
 
-        path_points = [(0, 0), (0, self.hsp_to_hip + 100)]
+        path_points = [(0, 0), (0, um['hsp_to_hip'] + 10)]
         draw_svg_line(path_points, front_group, self.normal_line)
 
-        draw_svg_line([(0, 0),(self.half_neck, 0)], front_group, self.doted_line)
-        draw_svg_line([(self.half_neck, 0), (0, self.hsp_to_hip)], front_group, self.doted_line)
-        draw_svg_line([(0, self.getunittouu('1.5cm')), (self.half_shoulder, 0)], front_group, self.doted_line)
-        draw_svg_line([(0, self.hsp_to_chest), (self.quarter_chest, 0)], front_group, self.doted_line)
-        draw_svg_line([(0, self.hsp_to_waist), (self.quarter_waist, 0)], front_group, self.doted_line)
-        draw_svg_line([(0, self.hsp_to_hip), (self.quarter_hip, 0)], front_group, self.doted_line)
+        draw_svg_line([(0, 0), (um['half_neck'], 0)], front_group, self.doted_line)
+        draw_svg_line([(um['half_neck'], 0), (0, um['hsp_to_hip'])], front_group, self.doted_line)
+        draw_svg_line([(0, self.getunittouu('1.5cm')), (um['half_shoulder'], 0)], front_group, self.doted_line)
+        draw_svg_line([(0, um['hsp_to_chest']), (um['quarter_chest'], 0)], front_group, self.doted_line)
+        draw_svg_line([(0, um['hsp_to_waist']), (um['quarter_waist'], 0)], front_group, self.doted_line)
+        draw_svg_line([(0, um['hsp_to_hip']), (um['quarter_hip'], 0)], front_group, self.doted_line)
 
         # The Main Template vertex
         edge_vertex = {
-            'neck':(self.half_neck, 0),
-            'shoulder': (self.half_shoulder, self.getunittouu('1.5cm')),
-            'chest': (self.quarter_chest, self.hsp_to_chest),
-            'waist': (self.quarter_waist, self.hsp_to_waist),
-            'hip': (self.quarter_hip, self.hsp_to_hip)
+            'neck': (um['half_neck'], 0),
+            'shoulder': (um['half_shoulder'], self.getunittouu('1.5cm')),
+            'chest': (um['quarter_chest'], um['hsp_to_chest']),
+            'waist': (um['quarter_waist'], um['hsp_to_waist']),
+            'hip': (um['quarter_hip'], um['hsp_to_hip'])
         }
         for name, vertex in edge_vertex.items():
             draw_svg_ellipse((3, 3), (vertex[0], vertex[1]), front_group, self.normal_line)
@@ -304,9 +299,8 @@ class Patron(inkex.Effect):
     # ---------------------------------------------------------------------- #
     def saved_template(self, template_id):
         """
-        Read 'patron.xml' file and get the saved templates data : 
-        Paths and Name of it's shapes.
-         Then draw the selected template in the document.
+            Read 'patron.xml' file and get the saved templates data
+            Then render the selected template in the document.
         """
 
         # From user params get the wanted type and size
@@ -325,7 +319,7 @@ class Patron(inkex.Effect):
             # Creation of a main group for the Template
             template_attribs = {
                 inkex.addNS('label', 'inkscape'): info,
-                'transform': transform.text if transform != None else ''
+                'transform': transform.text if transform is not None else ''
             }
             template_group = inkex.etree.SubElement(self.current_layer, 'g', template_attribs)
 
@@ -338,7 +332,7 @@ class Patron(inkex.Effect):
                 # Create a group for the piece
                 piece_attribs = {
                     inkex.addNS('label', 'inkscape'): pieceinfo,
-                    'transform': transform.text if transform != None else ''
+                    'transform': transform.text if transform is not None else ''
                 }
                 piece_group = inkex.etree.SubElement(template_group, 'g', piece_attribs)
 
@@ -355,7 +349,7 @@ class Patron(inkex.Effect):
                     # Create a group for the shape
                     part_attribs = {
                         inkex.addNS('label', 'inkscape'): partinfo,
-                        'transform': transform.text if transform != None else ''
+                        'transform': transform.text if transform is not None else ''
                     }
                     part_group = inkex.etree.SubElement(piece_group, 'g', part_attribs)
 

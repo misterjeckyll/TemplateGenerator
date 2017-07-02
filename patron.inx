@@ -31,7 +31,7 @@
 
             <param name="bicep" type="float" min="1.0" max="10000" precision="2" _gui-text="9) Tour du biceps:">25</param>
             <param name="sleeve" type="float" min="1.0" max="10000" precision="2" _gui-text="10) Longueur de la manche:">17</param>
-            <param name="ease" type="float" min="0" max="10000" precision="2" _gui-text="Flottement entre la peau et le vetement:">5</param>
+            <param name="ease" type="float" min="0" max="10000" precision="2" _gui-text="11) Flottement entre la peau et le vetement:">5</param>
 		</page>
 		<!-- Measurment help -->
 		<page name="measurements_guide" _gui-text="Guide de mesure">
@@ -52,7 +52,7 @@ Guide de taille Homme (cm)</_param>
 		    <_param name="taille" type="description" xml:space="preserve">Taille:       78  cm |  82  cm  |  86  cm  |  90  cm   |  94  cm</_param>
 		    <_param name="poitrine" type="description" xml:space="preserve">Poitrine:   90  cm |  94  cm  |  98  cm  |  95  cm   |  100 cm
 
-		    Ces patrons standards sont amples, si entre deux tailles prendre celle du dessous.
+Ces patrons standards sont amples, si entre deux tailles prendre celle du dessous.
 		    </_param>
 
 		    <param name="type" type="optiongroup" appearance="minimal" _gui-text="Patron généré :">
