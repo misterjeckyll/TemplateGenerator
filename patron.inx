@@ -6,39 +6,35 @@
 	<dependency type="executable" location="extensions">simplestyle.py</dependency>
 
 	<param name='active-tab' type="notebook">
-         <!-- Adapted T-shirt template -->
+         <!-- PARAMS INPUT PAGE  -->
 		<page name="input" _gui-text="Générer votre patron de t-shirt">
-            <!-- input unit -->
-            <param name="units" type="optiongroup" appearance="minimal" _gui-text="Unité des champs de mesures">
-                <option value="cm">cm</option>
-                <option value="mm">mm</option>
-                <option value="in">in</option>
-                <option value="pt">pt</option>
-                <option value="px">px</option></param>
-
-            <!-- body measurements -->
+            <!-- USER MEASUREMENTS  -->
             <_param name="measurements" type = "description" xml:space="preserve">Prendre la mesure du tour bien droit, serré mais pas trop</param>
-            <param name="neck" type="float" min="1.0" max="10000" precision = "2" _gui-text = "1) Largeur du cou">15</param>
-            <param name="shoulder" type="float" min="1.0" max="10000" precision = "2" _gui-text = "2) Largeur d'épaule à épaule">41</param>
-            <param name="chest" type="float" min="1.0" max="10000" precision="2" _gui-text="3) Tour de poitrine:">83</param>
-            <param name="waist" type="float" min="1.0" max="10000" precision="2" _gui-text="4) Tour de taille:">69</param>
-            <param name="hip" type="float" min="1.0" max="10000" precision="2" _gui-text="5) Tour de hanche:">87</param>
+            <param name="neck" type="float" min="0.0" max="10000" precision = "2" _gui-text = "1) Largeur du cou">15</param>
+            <param name="shoulder" type="float" min="0.0" max="10000" precision = "2" _gui-text = "2) Largeur d'épaule à épaule">41</param>
+            <param name="chest" type="float" min="0.0" max="10000" precision="2" _gui-text="3) Tour de poitrine:">83</param>
+            <param name="waist" type="float" min="0.0" max="10000" precision="2" _gui-text="4) Tour de taille:">69</param>
+            <param name="hip" type="float" min="0.0" max="10000" precision="2" _gui-text="5) Tour de hanche:">87</param>
 
             <_param name="HSP" type = "description" xml:space="preserve">Le HSP est le point haut d'épaule, prendre la mesure près du cou</param>
-            <param name="hsptochest" type="float" min="1.0" max="10000" precision="2" _gui-text="6) Longueur HSP -> poitrine:">21</param>
-            <param name="hsptowaist" type="float" min="1.0" max="10000" precision="2" _gui-text="7) Longueur HSP -> taille:">43</param>
-            <param name="hsptohip" type="float" min="1.0" max="10000" precision="2" _gui-text="8) Longueur HSP -> hanches:">64</param>
+            <param name="hsptochest" type="float" min="0.0" max="10000" precision="2" _gui-text="6) Longueur HSP -> poitrine:">21</param>
+            <param name="hsptowaist" type="float" min="0.0" max="10000" precision="2" _gui-text="7) Longueur HSP -> taille:">43</param>
+            <param name="hsptohip" type="float" min="0.0" max="10000" precision="2" _gui-text="8) Longueur HSP -> hanches:">64</param>
 
-            <param name="bicep" type="float" min="1.0" max="10000" precision="2" _gui-text="9) Tour du biceps:">25</param>
-            <param name="sleeve" type="float" min="1.0" max="10000" precision="2" _gui-text="10) Longueur de la manche:">17</param>
-            <param name="ease" type="float" min="0" max="10000" precision="2" _gui-text="11) Flottement entre la peau et le vetement:">5</param>
+            <param name="bicep" type="float" min="0.0" max="10000" precision="2" _gui-text="9) Tour du biceps:">25</param>
+            <param name="sleeve" type="float" min="0.0" max="10000" precision="2" _gui-text="10) Longueur de la manche:">17</param>
+            <param name="ease" type="float" min="0.0" max="10000" precision="2" _gui-text="11) Flottement entre la peau et le vetement:">5</param>
 		</page>
-		<!-- Measurment help -->
-		<page name="measurements_guide" _gui-text="Guide de mesure">
-		<_param name="title" type="description" xml:space="preserve"></_param>
+        <!-- ADVANCED PARAMS PAGE -->
+		<page name="measurements_guide" _gui-text="Avancé">
+		    <_param name="title" type="description" xml:space="preserve">Paramètres additionels pour adapter le patron au maximum</_param>
+            <param name="neck_drop" type="float" min="0.0" max="10000" precision="2" _gui-text="Hauteur de l'encolure:">0</param>
+            <param name="shoulder_drop" type="float" min="0.0" max="10000" precision="2" _gui-text="Descente de l'épaule:">1.5</param>
+            <param name="grid" type="boolean" _gui-text="Afficher la grille de référence">true</param>
+            <param name="temp" type="boolean" _gui-text="Afficher le patron">true</param>
 		</page>
-
-		<page name="sizeguide" _gui-text="Patron standard">
+        <!-- STANDARD TEMPLATE RENDER PAGE -->
+		<page name="sizeguide" _gui-text="Patrons standards">
 			<_param name="title" type="description" xml:space="preserve">Guide de taille femme </_param>
             <_param name="size" type="description" xml:space="preserve">                      34    |      36      |      38      |      40      |    42</_param>
 		    <_param name="hanche" type="description" xml:space="preserve">Hanche:   80  cm |  84  cm  |  88  cm  |  92 cm  |  100 cm</_param>
@@ -68,7 +64,7 @@ Ces patrons standards sont amples, si entre deux tailles prendre celle du dessou
                 <option value="masc_40">Patron Homme taille 40</option>
                 <option value="masc_42">Patron Homme taille 42</option></param>
 		</page>
-		<!-- page help -->
+        <!--  HELP & INFO PAGE  -->
 		<page name="help" _gui-text="Aide">
 			<_param name="use2" type="description" xml:space="preserve">
 Plus d'informations sur le site : https://fablab.ledome.info/#!/projects/generateur-de-t-shirt
@@ -84,6 +80,13 @@ Vous pouvez sélectionner un modele feminin ou masculin de t-shirt standard
 			</_param>
 		</page>
 	</param>
+	<!-- input unit -->
+    <param name="units" type="optiongroup" appearance="minimal" _gui-text="Unité des champs de mesures">
+        <option value="cm">cm</option>
+        <option value="mm">mm</option>
+        <option value="in">in</option>
+        <option value="pt">pt</option>
+        <option value="px">px</option></param>
 	<!-- classify which menu it appears under - can be new name -->
 	<effect>
 	<object-type>all</object-type>

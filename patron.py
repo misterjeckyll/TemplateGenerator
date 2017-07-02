@@ -192,7 +192,7 @@ class Patron(inkex.Effect):
         self.OptionParser.add_option("-t", "--type", type="string", dest="type", default='perso',
                                      help="Type of template rendered")
         self.OptionParser.add_option("-u", "--units", type="string", dest="units", default='cm',
-                                     help="Ui units")
+                                     help="User interface units")
         self.OptionParser.add_option("-n", "--neck", type="float", dest="neck", default=88,
                                      help="Width of the neck")
         self.OptionParser.add_option("-s", "--shoulder", type="float", dest="shoulder", default=88,
@@ -215,6 +215,14 @@ class Patron(inkex.Effect):
                                      help="Lenght of the sleeve")
         self.OptionParser.add_option("-e", "--ease", type="float", dest="ease", default=2,
                                      help="Amount of ease")
+        self.OptionParser.add_option("-d", "--neck_drop", type="float", dest="neck_drop", default=0,
+                                     help="Height of the neck hole")
+        self.OptionParser.add_option("-p", "--shoulder_drop", type="float", dest="shoulder_drop", default=1.5,
+                                     help="height of the shoulder")
+        self.OptionParser.add_option("-g", "--grid", type="inkbool", dest="grid", default=True,
+                                     help="Display the Reference Grid ")
+        self.OptionParser.add_option("-v", "--temp", type="inkbool", dest="temp", default=True,
+                                     help="Display the template")
         self.OptionParser.add_option("--active-tab", type="string", dest="active_tab",
                                      default='title', help="Active tab.")
 
@@ -261,7 +269,8 @@ class Patron(inkex.Effect):
             ease = self.getunittouu(str(self.options.ease) + self.options.units)
             user_measurements = {
                 'ease': ease,
-                'shoulder_drop':self.getunittouu('1.5cm'),
+                'shoulder_drop':self.getunittouu(str(self.options.shoulder_drop)+self.options.units),
+                'neck_drop':self.getunittouu(str(self.options.neck_drop)+self.options.units),
                 'half_neck': (ease + float(self.getunittouu(str(self.options.neck) + self.options.units))) / 2,
                 'half_shoulder': (ease + float(self.getunittouu(str(self.options.shoulder) + self.options.units))) / 2,
                 'quarter_hip': (ease + float(self.getunittouu(str(self.options.hip) + self.options.units))) / 4,
@@ -287,19 +296,6 @@ class Patron(inkex.Effect):
         Render the front piece of the template
         """
         front_group = inkex.etree.SubElement(parent, 'g', {inkex.addNS('label', 'inkscape'): info + "_front"})
-
-        Reference = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_structure"})
-        edge = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
-
-        # The Template structure reference
-        draw_svg_line([(0, 0), (0, um['hsp_to_hip'])], Reference, self.doted_line)
-        draw_svg_line([(0, 0), (um['half_neck'], 0)], Reference, self.doted_line)
-        draw_svg_line([(um['half_neck'], 0), (0, um['hsp_to_hip'])], Reference, self.doted_line)
-        draw_svg_line([(0, um['shoulder_drop']), (um['half_shoulder'], 0)], Reference, self.doted_line)
-        draw_svg_line([(0, um['hsp_to_chest']), (um['quarter_chest'], 0)], Reference, self.doted_line)
-        draw_svg_line([(0, um['hsp_to_waist']), (um['quarter_waist'], 0)], Reference, self.doted_line)
-        draw_svg_line([(0, um['hsp_to_hip']), (um['quarter_hip'], 0)], Reference, self.doted_line)
-
         # The template main vertexes absolute positions
         vertexes = {
             'neck': (um['half_neck'], 0),
@@ -308,10 +304,23 @@ class Patron(inkex.Effect):
             'waist': (um['quarter_waist'], um['hsp_to_waist']),
             'hip': (um['quarter_hip'], um['hsp_to_hip'])
         }
-        for name, vertex in vertexes.items():
-            draw_svg_ellipse((3, 3), (vertex[0], vertex[1]), Reference, self.normal_line)
+
+        if self.options.grid:
+            Reference = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_structure"})
+            # The Template structure reference
+            draw_svg_line([(0, 0), (0, um['hsp_to_hip'])], Reference, self.doted_line)
+            draw_svg_line([(0, 0), (um['half_neck'], 0)], Reference, self.doted_line)
+            draw_svg_line([(um['half_neck'], 0), (0, um['hsp_to_hip'])], Reference, self.doted_line)
+            draw_svg_line([(0, um['shoulder_drop']), (um['half_shoulder'], 0)], Reference, self.doted_line)
+            draw_svg_line([(0, um['hsp_to_chest']), (um['quarter_chest'], 0)], Reference, self.doted_line)
+            draw_svg_line([(0, um['hsp_to_waist']), (um['quarter_waist'], 0)], Reference, self.doted_line)
+            draw_svg_line([(0, um['hsp_to_hip']), (um['quarter_hip'], 0)], Reference, self.doted_line)
+
+            for name, vertex in vertexes.items():
+                draw_svg_ellipse((3, 3), (vertex[0], vertex[1]), Reference, self.normal_line)
 
         # Template edge paths
+        edge = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
         # neck_drop = self.getunittouu('5cm')
         draw_svg_ellipse((um['half_neck'], um['half_neck']), (0, 0), edge, self.normal_line, (0, pi/2))
         draw_svg_line([(0, um['half_neck']), (0,um['hsp_to_hip']-um['half_neck'])], edge, self.normal_line)
