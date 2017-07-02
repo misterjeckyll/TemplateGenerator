@@ -1,23 +1,78 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Inkscape Extension to generate a t-shirt svg template to be printed with a plotter-tracer
-or a printer.
+Copyright (C) 2017 William Pantry pantryw@gmail.com
+-----------------------------------------------
+                  DESCRIPTION
+-----------------------------------------------
+This extension render a t-shirt svg template, constructed from the user body measurements.
+The rendered template is used as a support for sewing a T-shirt with the user's morphology.
+
+The svg template can then be printed with a plotter-tracer (or any kind of printer)
+ on one or two (for the biggest sizes) A0 Paper Page.
+The SVG template can also be used to directly cut the clothing with a laser cutter.
+
+-----------------------------------------------
+                    LICENSE
+-----------------------------------------------
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 
+import xml.etree.ElementTree as Etree
 import inkex
 import pturtle
 import simplestyle
-import xml.etree.ElementTree as etree
-__version__ = '0.1'
+from math import pi
+
+__version__ = '1'
 
 inkex.localize()
 
 
-# ----------------------------------------------------------------#
+# ---------------------------------------------------------------- #
 #                       UTILITY FUNCTIONS
-# ----------------------------------------------------------------#
-# SVG element generation routine
+# ---------------------------------------------------------------- #
+def add_text(parent, text, transform='', text_height=12, color='#000000'):
+    """
+        Create and insert a single line of text into the svg document under parent.
+    """
+    text_style = {'font-size': '%dpx' % text_height, 'font-style': 'normal', 'font-weight': 'normal',
+                  'fill': color, 'font-family': 'Bitstream Vera Sans,sans-serif',
+                  'text-anchor': 'middle', 'text-align': 'center'}
+
+    text_attribs = {
+        inkex.addNS('label', 'inkscape'): 'Annotation',
+        'style': simplestyle.formatStyle(text_style)
+    }
+    if transform != "translate(0,0)":
+        text_attribs['transform'] = transform
+    text_node = inkex.etree.SubElement(parent, inkex.addNS('text', 'svg'), text_attribs)
+    text_node.text = text
+
+
+def draw_svg_line(points_list, parent, style):
+    """
+        Draw an SVG line segment between the given points under parent
+    """
+    line_attribs = {'style': simplestyle.formatStyle(style),
+                    inkex.addNS('label', 'inkscape'): 'line',
+                    'd': to_path_string(points_list, False)}
+
+    inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), line_attribs)
+
+
 def draw_svg_square(w, h, x, y, parent):
     style = {'stroke': 'none',
              'stroke-width': '1',
@@ -34,19 +89,26 @@ def draw_svg_square(w, h, x, y, parent):
     inkex.etree.SubElement(parent, inkex.addNS('rect', 'svg'), attribs)
 
 
-def points_to_svgd(p, close=True):
-    """ 
-        convert list of points (x,y) pairs
-        into a closed SVG path list
-    """
-    f = p[0]
-    p = p[1:]
-    svgd = 'M%.4f,%.4f' % (f, f)
-    for x in p:
-        svgd += 'L%.4f,%.4f' % x
-    if close:
-        svgd += 'z'
-    return svgd
+def draw_svg_ellipse(radius, center, parent, style, start_end=(0, 2 * pi), transform=''):
+    rx, ry = radius
+    cx, cy = center
+    circ_attribs = {
+        'style': simplestyle.formatStyle(style),
+        inkex.addNS('cx', 'sodipodi'): str(cx),
+        inkex.addNS('cy', 'sodipodi'): str(cy),
+        inkex.addNS('rx', 'sodipodi'): str(rx),
+        inkex.addNS('ry', 'sodipodi'): str(ry),
+        inkex.addNS('start', 'sodipodi'): str(start_end[0]),
+        inkex.addNS('end', 'sodipodi'): str(start_end[1]),
+        inkex.addNS('open', 'sodipodi'): 'true',  # all ellipse sectors we will draw are open
+        inkex.addNS('type', 'sodipodi'): 'arc',
+        'transform': transform
+                    }
+    inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), circ_attribs)
+
+
+def to_path_string(arr, close=True):
+    return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), " z" if close else "")
 
 
 def points_to_bbox(p):
@@ -83,9 +145,9 @@ def points_to_bbox_center(p):
 # ----------------------------------------------------------------#
 class Patron(inkex.Effect):
     """
-        Patron generate the paths of a basic T-shirt template from user measurements.
+        Patron render the paths of a basic T-shirt template from user measurements.
         Printed, this Svg template is used as a support for sewing a t-shirt 
-        with the perfect morphology.
+        with the correct morphology.
     """
 
     def __init__(self):
@@ -96,25 +158,25 @@ class Patron(inkex.Effect):
         inkex.Effect.__init__(self)
 
         self.doc_center = None
-        self.offset_style = {
+        self.normal_line = {
             'stroke': '#000000',  # black
             'fill': 'none',  # no fill - just a line
             'stroke-width': '1'  # can also be in form '2mm'
         }
-        self.sewing_style = {
+        self.doted_line = {
             'stroke': '#000000',  # black
             'fill': 'none',  # no fill - just a line
             'stroke-width': '1',  # can also be in form '2mm'
-            'stroke-linecap':'butt',
-            'stroke-linejoin':'miter',
-            'stroke-miterlimit':'10',
-            'stroke-dasharray':'9.883,9.883',
-            'stroke-dashoffset':'0'
+            'stroke-linecap': 'butt',
+            'stroke-linejoin': 'miter',
+            'stroke-miterlimit': '10',
+            'stroke-dasharray': '9.883,9.883',
+            'stroke-dashoffset': '0'
         }
 
         # Define the list of parameters defined in the .inx file
         self.OptionParser.add_option("-t", "--type", type="string", dest="type", default='perso',
-                                     help="Type of template generated")
+                                     help="Type of template rendered")
         self.OptionParser.add_option("-u", "--units", type="string", dest="units", default='cm',
                                      help="Ui units")
         self.OptionParser.add_option("-n", "--neck", type="float", dest="neck", default=88,
@@ -155,7 +217,8 @@ class Patron(inkex.Effect):
             return self.unittouu(param)
 
     def calc_unit_factor(self, ui_unit):
-        """ return the scale factor for all dimension conversions.
+        """ 
+            return the scale factor for all dimension conversions.
             - The document units are always irrelevant as
               everything in inkscape is expected to be in 90dpi pixel units
         """
@@ -164,99 +227,80 @@ class Patron(inkex.Effect):
         unit_factor = self.getunittouu(str(1.0) + ui_unit)
         return unit_factor
 
-    @staticmethod
-    def detect_size(optype, mesure_list):
-        """Return us standard size corresponding to mesure in cm"""
-        sizedic = {
-            "fem": {"s": [[0, 90], [0, 68], [0, 84]], "m": [[90, 94], [68, 72], [84, 88]],
-                    "l": [[94, 200], [72, 200], [88, 200]]},
-            "masc": {"xs": [[0, 94], [0, 78], [0, 90]], "s": [[94, 98], [78, 82], [90, 94]],
-                     "m": [[98, 102], [82, 86], [94, 98]], "l": [[102, 106], [86, 90], []], "xl": ()}
-        }
-        size_found = []
-        for standard_size, sizelist in sizedic[optype].items():
-            for mesure, pair in zip(mesure_list, sizelist):
-                if self.getunittouu(str(pair[1]) + "cm") > mesure >= Patron.getunittouu(str(pair[0]) + "cm"):
-                    size_found.append(standard_size)
-        return size_found[-1]
-
-    @staticmethod
-    def add_text(node, text, transform = '', text_height=12, color='#000000'):
-        """Create and insert a single line of text into the svg under node."""
-        text_style = {'font-size': '%dpx' % text_height, 'font-style': 'normal', 'font-weight': 'normal',
-                      'fill': color, 'font-family': 'Bitstream Vera Sans,sans-serif',
-                      'text-anchor': 'middle', 'text-align': 'center'}
-        text_attribs = {
-            inkex.addNS('label', 'inkscape'): 'Annotation',
-            'style': simplestyle.formatStyle(text_style)
-        }
-        if transform != "translate(0,0)":
-            text_attribs['transform']=transform
-        text_node = inkex.etree.SubElement(node, inkex.addNS('text', 'svg'), text_attribs)
-        text_node.text = text
-
-    # ----------------------------------------------------------------------#
-    #                               MAIN
-    # ----------------------------------------------------------------------#
+    # ------------------------------------------------------------ #
+    #                            MAIN
+    # ------------------------------------------------------------ #
     def effect(self):
 
         # Get Document attribs
-        root = self.document.getroot()  # top node in document xml
+        root = self.document.getroot()  # top node in document tree
         docwidth = self.getunittouu(root.get('width'))
         docheight = self.getunittouu(root.get('height'))
-        self.doc_center = (str(docwidth / 2), str(docheight / 2))
+        self.doc_center = docwidth / 2, docheight / 2
 
         # Saved Template drawing
         template_id = self.options.type
         if template_id != "perso":
             self.saved_template(template_id)
+        else:
+            # Gather incoming measurements and convert it to internal unit (96dpi pixels)
+            ease = self.getunittouu(str(self.options.ease) + self.options.units)
 
-        # Gather incoming measurements and convert it to intern unit
-        hip = self.getunittouu(str(self.options.hip) + self.options.units)
-        waist = self.getunittouu(str(self.options.waist) + self.options.units)
-        chest = self.getunittouu(str(self.options.chest) + self.options.units)
-        hsp_to_chest = self.getunittouu(str(self.options.hsp_to_chest) + self.options.units)
-        hsp_to_waist = self.getunittouu(str(self.options.hsp_to_waist) + self.options.units)
-        hsp_to_hip = self.getunittouu(str(self.options.hsp_to_hip) + self.options.units)
-        bicep = self.getunittouu(str(self.options.bicep) + self.options.units)
-        sleeve = self.getunittouu(str(self.options.sleeve) + self.options.units)
+            self.half_neck = (ease + float(self.getunittouu(str(self.options.neck) + self.options.units))) / 2
+            self.half_shoulder = (ease + float(self.getunittouu(str(self.options.shoulder) + self.options.units))) / 2
 
-    def front(self, hip, waist, chest, height):
-        """ Draw the front piece of the T-shirt template using a turtle """
-        # calculate unit factor for units defined in dialog.
-        unit_factor = self.calc_unit_factor(self.options.units)
-        # Turtle direction
-        t = pturtle.pTurtle()
-        t.pu()
-        t.setpos(computePointInNode(list(self.view_center), self.current_layer))
-        t.pd()
-        t.fd(hip * unit_factor)
-        t.lt(90)
-        t.fd(height * unit_factor)
-        t.lt(90)
-        t.fd(waist * unit_factor)
-        t.lt(90)
-        t.fd(height * unit_factor)
+            self.quarter_hip = (ease + float(self.getunittouu(str(self.options.hip) + self.options.units))) / 4
+            self.quarter_waist = (ease + float(self.getunittouu(str(self.options.waist) + self.options.units))) / 4
+            self.quarter_chest = (ease + float(self.getunittouu(str(self.options.chest) + self.options.units))) / 4
 
-        # Style definition, cut info and add path to group node
+            self.hsp_to_chest = ease + self.getunittouu(str(self.options.hsp_to_chest) + self.options.units)
+            self.hsp_to_waist = self.getunittouu(str(self.options.hsp_to_waist) + self.options.units)
+            self.hsp_to_hip = self.getunittouu(str(self.options.hsp_to_hip) + self.options.units)
 
-        s = {'stroke-linejoin': 'miter', 'stroke-width': self.path_stroke_width,
-             'stroke-opacity': '1.0', 'fill-opacity': '1.0',
-             'stroke': self.path_color, 'stroke-linecap': 'butt',
-             'fill': self.path_fill}
+            self.bicephalf = (ease + float(self.getunittouu(str(self.options.bicep) + self.options.units))) / 2
+            self.sleeve = self.getunittouu(str(self.options.sleeve) + self.options.units)
 
-        inkex.etree.SubElement(self.current_layer,
-                               inkex.addNS('path', 'svg'),
-                               {'d': t.getPath(), 'style': simplestyle.formatStyle(s)})
+            # Main group for the Template
+            info = 'Patron_T-shirt_%s_%s_%s' % (self.options.hip, self.options.waist, self.options.chest)
+            template_group = inkex.etree.SubElement(self.current_layer, 'g', {inkex.addNS('label', 'inkscape'): info})
 
-        # Add template info
-        txtheight = 12
-        piece_info = ["T-shirt Simple - Face devant", "Bassin:" + str(hip), "taille:" + str(waist),
-                      "poitrine:" + str(chest), "hauteur:" + str(height)]
-        [self.add_text(self.topgroup, txt, [0, y * txtheight - 22], txtheight) for y, txt in enumerate(piece_info)]
+            self.front(template_group, info)
+
+    # -------------------------------------------------------------- #
+    #                          FRONT PIECE
+    # -------------------------------------------------------------- #
+    def front(self, parent, info="T-shirt_Template"):
+        """
+        Render the main piece of the template
+        :param parent: the parent node in the document
+        :param info: template string info
+        :return: 
+        """
+        front_group = inkex.etree.SubElement(parent, 'g',{inkex.addNS('label', 'inkscape'): info + "_front"})
+
+        path_points = [(0, 0), (0, self.hsp_to_hip + 100)]
+        draw_svg_line(path_points, front_group, self.normal_line)
+
+        draw_svg_line([(0, 0),(self.half_neck, 0)], front_group, self.doted_line)
+        draw_svg_line([(self.half_neck, 0), (0, self.hsp_to_hip)], front_group, self.doted_line)
+        draw_svg_line([(0, self.getunittouu('1.5cm')), (self.half_shoulder, 0)], front_group, self.doted_line)
+        draw_svg_line([(0, self.hsp_to_chest), (self.quarter_chest, 0)], front_group, self.doted_line)
+        draw_svg_line([(0, self.hsp_to_waist), (self.quarter_waist, 0)], front_group, self.doted_line)
+        draw_svg_line([(0, self.hsp_to_hip), (self.quarter_hip, 0)], front_group, self.doted_line)
+
+        # The Main Template vertex
+        edge_vertex = {
+            'neck':(self.half_neck, 0),
+            'shoulder': (self.half_shoulder, self.getunittouu('1.5cm')),
+            'chest': (self.quarter_chest, self.hsp_to_chest),
+            'waist': (self.quarter_waist, self.hsp_to_waist),
+            'hip': (self.quarter_hip, self.hsp_to_hip)
+        }
+        for name, vertex in edge_vertex.items():
+            draw_svg_ellipse((3, 3), (vertex[0], vertex[1]), front_group, self.normal_line)
 
     # ---------------------------------------------------------------------- #
-    #                            SAVED TEMPLATES
+    #                         RENDER SAVED TEMPLATES
     # ---------------------------------------------------------------------- #
     def saved_template(self, template_id):
         """
@@ -266,62 +310,64 @@ class Patron(inkex.Effect):
         """
 
         # From user params get the wanted type and size
-        type, size = template_id.split('_')
+        category, size = template_id.split('_')
 
         # Parse the xml file
-        template_tree = etree.parse("patron.xml")
+        template_tree = Etree.parse("patron.xml")
         root = template_tree.getroot()
 
         # Find The selected template
-        for template in root.findall("./type[@name='%s']/template[@size='%s']"%(type, size)):
+        for template in root.findall("./type[@name='%s']/template[@size='%s']" % (category, size)):
             # Find useful data
-            info = 'T-shirt_template_%s_%s' % (type, size)
+            info = 'T-shirt_template_%s_%s' % (category, size)
             transform = template.find('transform')
 
             # Creation of a main group for the Template
             template_attribs = {
-                 inkex.addNS('label', 'inkscape'): info,
-                 'transform':transform.text if transform != None else ''
-             }
-            template_group = inkex.etree.SubElement(self.current_layer, 'g',template_attribs)
+                inkex.addNS('label', 'inkscape'): info,
+                'transform': transform.text if transform != None else ''
+            }
+            template_group = inkex.etree.SubElement(self.current_layer, 'g', template_attribs)
 
             # For each pieces of the template
             for piece in template.findall('piece'):
                 # Find useful data
-                pieceinfo = info+"_"+piece.find('name').text
+                pieceinfo = info + "_" + piece.find('name').text
                 transform = piece.find('transform')
 
                 # Create a group for the piece
                 piece_attribs = {
-                 inkex.addNS('label', 'inkscape'): pieceinfo,
-                 'transform':transform.text if transform != None else ''
+                    inkex.addNS('label', 'inkscape'): pieceinfo,
+                    'transform': transform.text if transform != None else ''
                 }
                 piece_group = inkex.etree.SubElement(template_group, 'g', piece_attribs)
 
                 # Add a text to display the piece info
-                self.add_text(piece_group,pieceinfo.replace('_',' '), piece.find('info').text, 15)
+                add_text(piece_group, pieceinfo.replace('_', ' '), piece.find('info').text, 15)
 
                 # For each paths of the piece
                 for part in piece.findall('part'):
                     # Find useful data
                     name = part.find('name').text
-                    partinfo = pieceinfo+"_"+name
+                    partinfo = pieceinfo + "_" + name
                     transform = part.find('transform')
 
                     # Create a group for the shape
                     part_attribs = {
-                     inkex.addNS('label', 'inkscape'): partinfo,
-                     'transform':transform.text if transform != None else ''
+                        inkex.addNS('label', 'inkscape'): partinfo,
+                        'transform': transform.text if transform != None else ''
                     }
                     part_group = inkex.etree.SubElement(piece_group, 'g', part_attribs)
 
                     # Add the path to the group
                     path_attribs = {
                         inkex.addNS('label', 'inkscape'): partinfo,
-                        'style':simplestyle.formatStyle(self.sewing_style if name == "sewing" or name == "lign" else self.offset_style ),
-                        'd':part.find('path').text
+                        'style': simplestyle.formatStyle(
+                            self.doted_line if name == "sewing" or name == "lign" else self.normal_line),
+                        'd': part.find('path').text
                     }
-                    inkex.etree.SubElement(part_group, inkex.addNS('path','svg'), path_attribs)
+                    inkex.etree.SubElement(part_group, inkex.addNS('path', 'svg'), path_attribs)
+
 
 if __name__ == '__main__':
     e = Patron()

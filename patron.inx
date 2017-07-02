@@ -18,19 +18,20 @@
 
             <!-- body measurements -->
             <_param name="measurements" type = "description" xml:space="preserve">Prendre la mesure du tour bien droit, serré mais pas trop</param>
-            <param name="neck" type="float" min="1.0" max="10000" precision = "2" _gui-text = "1) Largeur du cou">80</param>
-            <param name="shoulder" type="float" min="1.0" max="10000" precision = "2" _gui-text = "2) Largeur d'épaule à épaule">80</param>
-            <param name="chest" type="float" min="1.0" max="10000" precision="2" _gui-text="3) Tour de poitrine:">80</param>
-            <param name="waist" type="float" min="1.0" max="10000" precision="2" _gui-text="4) Tour de taille:">64</param>
-            <param name="hip" type="float" min="1.0" max="10000" precision="2" _gui-text="5) Tour de hanche:">88</param>
+            <param name="neck" type="float" min="1.0" max="10000" precision = "2" _gui-text = "1) Largeur du cou">15</param>
+            <param name="shoulder" type="float" min="1.0" max="10000" precision = "2" _gui-text = "2) Largeur d'épaule à épaule">41</param>
+            <param name="chest" type="float" min="1.0" max="10000" precision="2" _gui-text="3) Tour de poitrine:">83</param>
+            <param name="waist" type="float" min="1.0" max="10000" precision="2" _gui-text="4) Tour de taille:">69</param>
+            <param name="hip" type="float" min="1.0" max="10000" precision="2" _gui-text="5) Tour de hanche:">87</param>
 
             <_param name="HSP" type = "description" xml:space="preserve">Le HSP est le point haut d'épaule, prendre la mesure près du cou</param>
-            <param name="hsptochest" type="float" min="1.0" max="10000" precision="2" _gui-text="6) Longueur HSP -> poitrine:">25</param>
-            <param name="hsptowaist" type="float" min="1.0" max="10000" precision="2" _gui-text="7) Longueur HSP -> taille:">25</param>
-            <param name="hsptohip" type="float" min="1.0" max="10000" precision="2" _gui-text="8) Longueur HSP -> hanches:">25</param>
+            <param name="hsptochest" type="float" min="1.0" max="10000" precision="2" _gui-text="6) Longueur HSP -> poitrine:">21</param>
+            <param name="hsptowaist" type="float" min="1.0" max="10000" precision="2" _gui-text="7) Longueur HSP -> taille:">43</param>
+            <param name="hsptohip" type="float" min="1.0" max="10000" precision="2" _gui-text="8) Longueur HSP -> hanches:">64</param>
+
             <param name="bicep" type="float" min="1.0" max="10000" precision="2" _gui-text="9) Tour du biceps:">25</param>
-            <param name="sleeve" type="float" min="1.0" max="10000" precision="2" _gui-text="10) Longueur de la manche:">25</param>
-            <param name="ease" type="float" min="0" max="10000" precision="2" _gui-text="Flottement entre la peau et le vetement:">20</param>
+            <param name="sleeve" type="float" min="1.0" max="10000" precision="2" _gui-text="10) Longueur de la manche:">17</param>
+            <param name="ease" type="float" min="0" max="10000" precision="2" _gui-text="Flottement entre la peau et le vetement:">5</param>
 		</page>
 		<!-- Measurment help -->
 		<page name="measurements_guide" _gui-text="Guide de mesure">
@@ -49,7 +50,10 @@ Guide de taille Homme (cm)</_param>
             <_param name="size" type="description" xml:space="preserve">                      34    |      36      |      38      |      40      |    42</_param>
 		    <_param name="hanche" type="description" xml:space="preserve">Hanche:   94  cm |  98  cm  |  102 cm |  106 cm |  110 cm</_param>
 		    <_param name="taille" type="description" xml:space="preserve">Taille:       78  cm |  82  cm  |  86  cm  |  90  cm   |  94  cm</_param>
-		    <_param name="poitrine" type="description" xml:space="preserve">Poitrine:   90  cm |  94  cm  |  98  cm  |  95  cm   |  100 cm</_param>
+		    <_param name="poitrine" type="description" xml:space="preserve">Poitrine:   90  cm |  94  cm  |  98  cm  |  95  cm   |  100 cm
+
+		    Ces patrons standards sont amples, si entre deux tailles prendre celle du dessous.
+		    </_param>
 
 		    <param name="type" type="optiongroup" appearance="minimal" _gui-text="Patron généré :">
                 <option value="perso">Patron généré avec les mesures</option>
