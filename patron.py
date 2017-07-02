@@ -107,6 +107,20 @@ def draw_svg_ellipse(radius, center, parent, style, start_end=(0, 2 * pi), trans
     inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), circ_attribs)
 
 
+def draw_svg_cubic_curve(curve_start, pt1, pt2, curve_end, parent, style, transform=''):
+    sx, sy = curve_start
+    cx, cy = pt1
+    dx, dy = pt2
+    ex, ey = curve_end
+    curve_attribs = {
+        'style': simplestyle.formatStyle(style),
+        inkex.addNS('label','inkscape'):'cubic curve',
+        'transform': transform,
+        'd':'M {} {} c {} {}, {} {}, {} {}'.format(sx, sy, cx, cy, dx, dy, ex, ey)
+    }
+    inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), curve_attribs)
+
+
 def to_path_string(arr, close=True):
     return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), " z" if close else "")
 
@@ -286,7 +300,7 @@ class Patron(inkex.Effect):
         draw_svg_line([(0, um['hsp_to_waist']), (um['quarter_waist'], 0)], Reference, self.doted_line)
         draw_svg_line([(0, um['hsp_to_hip']), (um['quarter_hip'], 0)], Reference, self.doted_line)
 
-        # The template main vertexes
+        # The template main vertexes absolute positions
         vertexes = {
             'neck': (um['half_neck'], 0),
             'shoulder': (um['half_shoulder'], um['shoulder_drop']),
@@ -302,6 +316,12 @@ class Patron(inkex.Effect):
         draw_svg_ellipse((um['half_neck'], um['half_neck']), (0, 0), edge, self.normal_line, (0, pi/2))
         draw_svg_line([(0, um['half_neck']), (0,um['hsp_to_hip']-um['half_neck'])], edge, self.normal_line)
         draw_svg_line([vertexes['neck'],(um['half_shoulder']-um['half_neck'],um['shoulder_drop'])], edge, self.normal_line)
+
+        curve_start = vertexes['shoulder']
+        control_point1 = (-um['quarter_chest']/4, um['hsp_to_chest']/2)
+        control_point2 = (-um['quarter_chest']/4, um['hsp_to_chest']*0.75)
+        curve_end = (-um['half_shoulder']+um['quarter_chest'], um['hsp_to_chest']-um['shoulder_drop'])
+        draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, self.normal_line)
 
     # ---------------------------------------------------------------------- #
     #                         RENDER SAVED TEMPLATES
