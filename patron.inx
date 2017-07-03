@@ -11,15 +11,15 @@
             <!-- USER MEASUREMENTS  -->
             <_param name="measurements" type = "description" xml:space="preserve">Prendre la mesure du tour bien droit, serré mais pas trop</param>
             <param name="neck" type="float" min="0.0" max="10000" precision = "2" _gui-text = "1) Largeur du cou">15</param>
-            <param name="shoulder" type="float" min="0.0" max="10000" precision = "2" _gui-text = "2) Largeur d'épaule à épaule">41</param>
-            <param name="chest" type="float" min="0.0" max="10000" precision="2" _gui-text="3) Tour de poitrine:">83</param>
-            <param name="waist" type="float" min="0.0" max="10000" precision="2" _gui-text="4) Tour de taille:">69</param>
-            <param name="hip" type="float" min="0.0" max="10000" precision="2" _gui-text="5) Tour de hanche:">87</param>
+            <param name="shoulder" type="float" min="0.0" max="10000" precision = "2" _gui-text = "2) Largeur d'épaule à épaule">43</param>
+            <param name="chest" type="float" min="0.0" max="10000" precision="2" _gui-text="3) Tour de poitrine:">96</param>
+            <param name="waist" type="float" min="0.0" max="10000" precision="2" _gui-text="4) Tour de taille:">81</param>
+            <param name="hip" type="float" min="0.0" max="10000" precision="2" _gui-text="5) Tour de hanche:">89</param>
 
             <_param name="HSP" type = "description" xml:space="preserve">Le HSP est le point haut d'épaule, prendre la mesure près du cou</param>
             <param name="hsptochest" type="float" min="0.0" max="10000" precision="2" _gui-text="6) Longueur HSP -> poitrine:">21</param>
-            <param name="hsptowaist" type="float" min="0.0" max="10000" precision="2" _gui-text="7) Longueur HSP -> taille:">43</param>
-            <param name="hsptohip" type="float" min="0.0" max="10000" precision="2" _gui-text="8) Longueur HSP -> hanches:">64</param>
+            <param name="hsptowaist" type="float" min="0.0" max="10000" precision="2" _gui-text="7) Longueur HSP -> taille:">44</param>
+            <param name="hsptohip" type="float" min="0.0" max="10000" precision="2" _gui-text="8) Longueur HSP -> hanches:">67</param>
 
             <param name="bicep" type="float" min="0.0" max="10000" precision="2" _gui-text="9) Tour du biceps:">25</param>
             <param name="sleeve" type="float" min="0.0" max="10000" precision="2" _gui-text="10) Longueur de la manche:">17</param>
@@ -28,8 +28,9 @@
         <!-- ADVANCED PARAMS PAGE -->
 		<page name="measurements_guide" _gui-text="Avancé">
 		    <_param name="title" type="description" xml:space="preserve">Paramètres additionels pour adapter le patron au maximum</_param>
-            <param name="neck_drop" type="float" min="0.0" max="10000" precision="2" _gui-text="Hauteur de l'encolure:">0</param>
-            <param name="shoulder_drop" type="float" min="0.0" max="10000" precision="2" _gui-text="Descente de l'épaule:">1.5</param>
+            <param name="neck_front" type="float" min="0.0" max="10000" precision="2" _gui-text="Hauteur de l'encolure avant:">0</param>
+            <param name="neck_rear" type="float" min="0.0" max="10000" precision="2" _gui-text="Hauteur de l'encolure arriere:">3.5</param>
+            <param name="shoulder_drop" type="float" min="0.0" max="10000" precision="2" _gui-text="Descente de l'épaule:">2</param>
             <param name="grid" type="boolean" _gui-text="Afficher la grille de référence">true</param>
             <param name="temp" type="boolean" _gui-text="Afficher le patron">true</param>
             <param name="style" type="optiongroup" appearance="minimal" _gui-text="Style du patron :">
