@@ -177,6 +177,11 @@ class Patron(inkex.Effect):
             'fill': 'none',  # no fill - just a line
             'stroke-width': '1'  # can also be in form '2mm'
         }
+        self.cut_line = {
+            'stroke': '#ff0000',  # black
+            'fill': 'none',  # no fill - just a line
+            'stroke-width': '0.1'  # can also be in form '2mm'
+        }
         self.doted_line = {
             'stroke': '#000000',  # black
             'fill': 'none',  # no fill - just a line
@@ -193,6 +198,8 @@ class Patron(inkex.Effect):
                                      help="Type of template rendered")
         self.OptionParser.add_option("-u", "--units", type="string", dest="units", default='cm',
                                      help="User interface units")
+        self.OptionParser.add_option("--style", type="string", dest="style", default='print',
+                                     help="Style of the template")
         self.OptionParser.add_option("-n", "--neck", type="float", dest="neck", default=88,
                                      help="Width of the neck")
         self.OptionParser.add_option("-s", "--shoulder", type="float", dest="shoulder", default=88,
@@ -213,7 +220,7 @@ class Patron(inkex.Effect):
                                      help="Bicep measurement")
         self.OptionParser.add_option("-m", "--sleeve", type="float", dest="sleeve", default=23,
                                      help="Lenght of the sleeve")
-        self.OptionParser.add_option("-e", "--ease", type="float", dest="ease", default=2,
+        self.OptionParser.add_option("-e", "--ease", type="float", dest="ease", default=3,
                                      help="Amount of ease")
         self.OptionParser.add_option("-d", "--neck_drop", type="float", dest="neck_drop", default=0,
                                      help="Height of the neck hole")
@@ -260,14 +267,14 @@ class Patron(inkex.Effect):
         docheight = self.getunittouu(root.get('height'))
         self.doc_center = docwidth / 2, docheight / 2
 
-        # Saved Template drawing
+        # Render Saved Template
         template_id = self.options.type
         if template_id != "perso":
             self.saved_template(template_id)
         else:
             # Gather incoming measurements and convert it to internal unit (96dpi pixels)
             ease = self.getunittouu(str(self.options.ease) + self.options.units)
-            user_measurements = {
+            user = {
                 'ease': ease,
                 'shoulder_drop':self.getunittouu(str(self.options.shoulder_drop)+self.options.units),
                 'neck_drop':self.getunittouu(str(self.options.neck_drop)+self.options.units),
@@ -282,11 +289,14 @@ class Patron(inkex.Effect):
                 'bicep_half': (ease + float(self.getunittouu(str(self.options.bicep) + self.options.units))) / 2,
                 'sleeve': self.getunittouu(str(self.options.sleeve) + self.options.units)
             }
+            user['shoulder_to_chest'] = user['hsp_to_chest']-user['shoulder_drop']
+            user['chest_to_waist'] = user['hsp_to_waist']-user['hsp_to_chest']
+
             # Main group for the Template
             info = 'Patron_T-shirt_%s_%s_%s' % (self.options.hip, self.options.waist, self.options.chest)
             template_group = inkex.etree.SubElement(self.current_layer, 'g', {inkex.addNS('label', 'inkscape'): info})
 
-            self.front(template_group, user_measurements, info)
+            self.front(template_group, user, info)
 
     # -------------------------------------------------------------- #
     #                          FRONT PIECE
@@ -305,9 +315,10 @@ class Patron(inkex.Effect):
             'hip': (um['quarter_hip'], um['hsp_to_hip'])
         }
 
+        # The Template structure reference
         if self.options.grid:
             Reference = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_structure"})
-            # The Template structure reference
+
             draw_svg_line([(0, 0), (0, um['hsp_to_hip'])], Reference, self.doted_line)
             draw_svg_line([(0, 0), (um['half_neck'], 0)], Reference, self.doted_line)
             draw_svg_line([(um['half_neck'], 0), (0, um['hsp_to_hip'])], Reference, self.doted_line)
@@ -320,20 +331,27 @@ class Patron(inkex.Effect):
                 draw_svg_ellipse((3, 3), (vertex[0], vertex[1]), Reference, self.normal_line)
 
         # Template edge paths
-        edge = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
-        # neck_drop = self.getunittouu('5cm')
-        draw_svg_ellipse((um['half_neck'], um['half_neck']), (0, 0), edge, self.normal_line, (0, pi/2))
-        draw_svg_line([(0, um['half_neck']), (0,um['hsp_to_hip']-um['half_neck'])], edge, self.normal_line)
-        draw_svg_line([vertexes['neck'],(um['half_shoulder']-um['half_neck'],um['shoulder_drop'])], edge, self.normal_line)
+        if self.options.temp:
+            line_style = self.normal_line if self.options.style == 'print' else self.cut_line
+            edge = inkex.etree.SubElement(front_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
+            # neck_drop = self.getunittouu('5cm')
+            neck_drop = um['neck_drop'] if um['neck_drop']>0 else um['half_neck']
+            draw_svg_ellipse((um['half_neck'], neck_drop), (0, 0), edge, line_style, (0, pi/2))
+            draw_svg_line([(0, neck_drop), (0,um['hsp_to_hip']-um['half_neck'])], edge, line_style)
+            draw_svg_line([vertexes['neck'],(um['half_shoulder']-um['half_neck'],um['shoulder_drop'])], edge, line_style)
 
-        curve_start = vertexes['shoulder']
-        control_point1 = (-um['quarter_chest']/4, um['hsp_to_chest']/2)
-        control_point2 = (-um['quarter_chest']/4, um['hsp_to_chest']*0.75)
-        curve_end = (-um['half_shoulder']+um['quarter_chest'], um['hsp_to_chest']-um['shoulder_drop'])
-        draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, self.normal_line)
+            curve_start = vertexes['shoulder']
+            control_point1 = (-self.getunittouu('30mm'), um['shoulder_to_chest']/2)
+            control_point2 = (-self.getunittouu('30mm'), um['shoulder_to_chest'])
+            curve_end = (-um['half_shoulder']+um['quarter_chest'], um['hsp_to_chest']-um['shoulder_drop'])
+            draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, line_style)
+
+            curve_start = vertexes['chest']
+            control_point1 = (-(um['quarter_chest']-um['quarter_waist']),um['chest_to_waist'])
+            control_point2 = (-(um['quarter_chest'] - um['quarter_hip']), um['chest_to_hip'])
 
     # ---------------------------------------------------------------------- #
-    #                         RENDER SAVED TEMPLATES
+    #                        RENDER SAVED TEMPLATES
     # ---------------------------------------------------------------------- #
     def saved_template(self, template_id):
         """
@@ -392,10 +410,10 @@ class Patron(inkex.Effect):
                     part_group = inkex.etree.SubElement(piece_group, 'g', part_attribs)
 
                     # Add the path to the group
+                    line_syle = self.normal_line if self.options.style == 'print' or label != 'offset' else self.cut_line
                     path_attribs = {
                         inkex.addNS('label', 'inkscape'): partinfo,
-                        'style': simplestyle.formatStyle(
-                            self.doted_line if label == "sewing" or label == "lign" else self.normal_line),
+                        'style': simplestyle.formatStyle(line_syle),
                         'd': part.find('path').text
                     }
                     inkex.etree.SubElement(part_group, inkex.addNS('path', 'svg'), path_attribs)

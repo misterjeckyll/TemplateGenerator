@@ -32,6 +32,10 @@
             <param name="shoulder_drop" type="float" min="0.0" max="10000" precision="2" _gui-text="Descente de l'épaule:">1.5</param>
             <param name="grid" type="boolean" _gui-text="Afficher la grille de référence">true</param>
             <param name="temp" type="boolean" _gui-text="Afficher le patron">true</param>
+            <param name="style" type="optiongroup" appearance="minimal" _gui-text="Style du patron :">
+                <option value="print">Traçage/impression</option>
+                <option value="cut">Découpage/gravure Laser</option>
+            </param>
 		</page>
         <!-- STANDARD TEMPLATE RENDER PAGE -->
 		<page name="sizeguide" _gui-text="Patrons standards">
