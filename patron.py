@@ -38,7 +38,7 @@ from math import pi
 import inkex
 import simplestyle
 
-from fablab_lib import BaseEffect
+from fablab_lib import *
 
 __version__ = '1'
 
@@ -161,7 +161,7 @@ def points_to_bbox_center(p):
 # ----------------------------------------------------------------#
 #                   T-SHIRT TEMPLATE GENERATOR
 # ----------------------------------------------------------------#
-class Patron(BaseEffect):
+class Patron(inkex.Effect):
     """
         Patron render the paths of a basic T-shirt template from user measurements.
         Printed, this Svg template is used as a support for sewing a t-shirt 
@@ -266,7 +266,6 @@ class Patron(BaseEffect):
     #                            MAIN
     # ------------------------------------------------------------ #
     def effect(self):
-
         # Get Document attribs
         root = self.document.getroot()  # top node in document tree
         docwidth = self.getunittouu(root.get('width'))
@@ -367,7 +366,17 @@ class Patron(BaseEffect):
 
             for name, vertex in vertexes.items():
                 draw_svg_ellipse((4, 4), (vertex[0], vertex[1]), Reference, self.normal_line)
-
+        """
+        d = node.get('d')
+                    inkex.errormsg('Size of d element:%d' % len(d))
+                    parent = self.current_layer
+                    s = {'stroke':'#000000', 'stroke-width':'1', 'fill':'none', 'stroke-opacity':'1'}
+                    attr = {'style':simplestyle.formatStyle(s),
+                       inkex.addNS('type','sodipodi'):   'inkscape:offset',
+                       inkex.addNS('radius','inkscape'):   '5',
+                       inkex.addNS('original','inkscape'):   d
+                    }
+        """
     # ---------------------------------------------------------------------- #
     #                        RENDER SAVED TEMPLATES
     # ---------------------------------------------------------------------- #
