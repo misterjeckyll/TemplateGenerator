@@ -132,6 +132,39 @@ def to_path_string(arr, close=True):
     return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), " z" if close else "")
 
 
+def draw_svg_path(path_description_list, parent, style, close=True):
+    """
+    Convert a list of paths descriptions to an svg string path
+    then draw the path under parent node .
+    a path description is a dictionary <"path type", [(pt1)]>
+    :param path_description_list: a list of paths descriptions
+    [
+    {'l': [(x1, y1),(x2, y2)]},
+    {'c': [ (x_ctrl_pt1, y_ctrl_pt1), (x_ctrl_pt2, y_ctrl_pt2), (x_end_pt, y_end_pt) ]},
+    {'a': [ (radiusx, radiusy), (0, 0), (x_end_pt, y_end_pt) ]} 
+     ]
+    :param parent: 
+    :param style: 
+    :param close: 
+    :return: the svg string path 
+    """
+    arr = path_description_list
+    path = '%s %s' % (arr[0][0], arr[0][1])
+    for dic in arr[1:]:
+        for descr, pt_list in dic.items():
+            path += ' %s ' % descr
+            path += ' '.join([','.join([str(c) for c in pt] if type(pt) is tuple else str(pt)) for pt in pt_list])
+
+    d = "m %s%s" % (path, " z" if close else "")
+    # inkex.errormsg(d)
+    shape_attribs = {
+        'style': simplestyle.formatStyle(style),
+        'd': d
+    }
+    inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape_attribs)
+    return d
+
+
 def points_to_bbox(p):
     """ 
         from a list of points (x,y pairs)
@@ -265,34 +298,6 @@ class Patron(inkex.Effect):
         unit_factor = self.getunittouu(str(1.0) + ui_unit)
         return unit_factor
 
-    def draw_svg_path(self, path_description_list, parent, style, close=True):
-        """
-        Convert a list of paths descriptions to an svg string path
-        then draw the path under parent node .
-        a path description is a dictionary <"path type", [(pt1)]>
-        :param path_description_list: a list of paths descriptions
-        [
-        {'l': [(x1, y1),(x2, y2)]},
-        {'c': [ (x_ctrl_pt1, y_ctrl_pt1), (x_ctrl_pt2, y_ctrl_pt2), (x_end_pt, y_end_pt) ]},
-        {'a': [ (radiusx, radiusy), (0, 0), (x_end_pt, y_end_pt) ]} 
-         ]
-        :return: the svg string path
-        """
-        arr = path_description_list
-        path = '%s %s' % (arr[0][0], arr[0][1])
-        for dic in arr[1:]:
-            for descr, pt_list in dic.items():
-                path += ' %s ' % descr
-                path+= ' '.join([','.join([str(c) for c in pt] if type(pt) is tuple else str(pt)) for pt in pt_list])
-
-        d = "m %s%s" % (path, " z" if close else "")
-        # inkex.errormsg(d)
-        shape_attribs = {
-            'style': simplestyle.formatStyle(style),
-            'd': d
-        }
-        inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape_attribs)
-
     # ------------------------------------------------------------ #
     #                            MAIN
     # ------------------------------------------------------------ #
@@ -364,32 +369,16 @@ class Patron(inkex.Effect):
             line_style = self.normal_line if self.options.style == 'print' else self.cut_line
             edge = inkex.etree.SubElement(piece_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
 
-            paths = [vertexes['neck_drop']]
-            paths.append(self.neckline(um, neck_drop))
-            paths.append(self.shoulder_line(um))
-            paths.append(self.sleeve_curve(um))
-            paths.append(self.waist_curve(um))
-            paths.append({'l': [(-um['hip'], 0)]})
+            path = [
+                vertexes['neck_drop'],
+                Patron.neckline(um, neck_drop),
+                Patron.shoulder_line(um),
+                Patron.sleeve_curve(um),
+                Patron.waist_curve(um),
+                {'l': [(-um['hip'], 0)]}
+            ]
 
-            self.draw_svg_path(paths, edge, line_style)
-
-            # draw_svg_ellipse(vertexes['neck_drop'],(um['neck'], neck_drop), (0, 0), (um['neck'], -neck_drop), edge, line_style)
-            # draw_svg_line([(0, neck_drop), (0, um['hsp_hip'] - neck_drop)], edge, line_style)
-            # draw_svg_line([vertexes['neck'], (um['shoulder'] - um['neck'], um['shoulder_drop'])], edge, line_style)
-
-            # curve_start = vertexes['shoulder']
-            # control_point1 = (-self.getunittouu('30mm'), um['shoulder_to_chest'] / 2)
-            # control_point2 = (-self.getunittouu('30mm'), um['shoulder_to_chest'])
-            # curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
-            # draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, line_style)
-
-            # curve_start = vertexes['chest']
-            # control_point1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
-            # control_point2 = (-(um['chest'] - um['hip']), 0.75 * um['chest_to_hip'])
-            # curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
-            # draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, line_style)
-
-            # draw_svg_line([vertexes['hip'], (-um['hip'], 0)], edge, line_style)
+            draw_svg_path(path, edge, line_style)
 
         # The Template structure reference
         if self.options.grid:
@@ -414,19 +403,23 @@ class Patron(inkex.Effect):
                     }
         """
 
-    def neckline(self, um, neckdrop):
+    @staticmethod
+    def neckline(um, neckdrop):
         return {'a': [(um['neck'], neckdrop), 0, 0, 0, (um['neck'], -neckdrop)]}
 
-    def shoulder_line(self, um):
+    @staticmethod
+    def shoulder_line(um):
         return {'l': [(um['shoulder'] - um['neck'], um['shoulder_drop'])]}
 
-    def sleeve_curve(self, um):
+    @staticmethod
+    def sleeve_curve(um):
         ctrl_p1 = (-self.getunittouu('30mm'), um['shoulder_to_chest'] / 2)
         ctrl_p2 = (-self.getunittouu('30mm'), um['shoulder_to_chest'])
         curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
         return {'c': [ctrl_p1, ctrl_p2, curve_end]}
 
-    def waist_curve(self, um):
+    @staticmethod
+    def waist_curve(um):
         ctrl_p1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
         ctrl_p2 = (-(um['chest'] - um['hip']), 0.75 * um['chest_to_hip'])
         curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
@@ -492,10 +485,10 @@ class Patron(inkex.Effect):
                     part_group = inkex.etree.SubElement(piece_group, 'g', part_attribs)
 
                     # Add the path to the group
-                    line_syle = self.normal_line if self.options.style == 'print' or label != 'offset' else self.cut_line
+                    style = self.normal_line if self.options.style == 'print' or label != 'offset' else self.cut_line
                     path_attribs = {
                         inkex.addNS('label', 'inkscape'): partinfo,
-                        'style': simplestyle.formatStyle(line_syle),
+                        'style': simplestyle.formatStyle(style),
                         'd': part.find('path').text
                     }
                     inkex.etree.SubElement(part_group, inkex.addNS('path', 'svg'), path_attribs)
