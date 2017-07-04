@@ -33,12 +33,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 
 import xml.etree.ElementTree as Etree
-from math import pi
 
 import inkex
 import simplestyle
-
-from fablab_lib import *
 
 __version__ = '1'
 
@@ -93,19 +90,25 @@ def draw_svg_square(w, h, x, y, parent):
     inkex.etree.SubElement(parent, inkex.addNS('rect', 'svg'), attribs)
 
 
-def draw_svg_ellipse(radius, center, parent, style, start_end=(0, 2 * pi), transform=''):
-    rx, ry = radius
-    cx, cy = center
+def draw_svg_circle(radius, center, parent, style, transform=''):
     circ_attribs = {
         'style': simplestyle.formatStyle(style),
-        inkex.addNS('cx', 'sodipodi'): str(cx),
-        inkex.addNS('cy', 'sodipodi'): str(cy),
-        inkex.addNS('rx', 'sodipodi'): str(rx),
-        inkex.addNS('ry', 'sodipodi'): str(ry),
-        inkex.addNS('start', 'sodipodi'): str(start_end[0]),
-        inkex.addNS('end', 'sodipodi'): str(start_end[1]),
-        inkex.addNS('open', 'sodipodi'): 'true',  # all ellipse sectors we will draw are open
-        inkex.addNS('type', 'sodipodi'): 'arc',
+        'cx': str(center[0]),
+        'cy': str(center[1]),
+        'r': str(radius),
+        'transform': transform
+    }
+    inkex.etree.SubElement(parent, inkex.addNS('circle', 'svg'), circ_attribs)
+
+
+def draw_svg_ellipse(start, radius, center, end, parent, style, transform=''):
+    sx, sy = start
+    rx, ry = radius
+    cx, cy = center
+    ex, ey = end
+    circ_attribs = {
+        'style': simplestyle.formatStyle(style),
+        'd': 'm {} {} a {} {} {} {} 0 {} {}'.format(sx, sy, rx, ry, cx, cy, ex, ey),
         'transform': transform
     }
     inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), circ_attribs)
@@ -262,6 +265,34 @@ class Patron(inkex.Effect):
         unit_factor = self.getunittouu(str(1.0) + ui_unit)
         return unit_factor
 
+    def draw_svg_path(self, path_description_list, parent, style, close=True):
+        """
+        Convert a list of paths descriptions to an svg string path
+        then draw the path under parent node .
+        a path description is a dictionary <"path type", [(pt1)]>
+        :param path_description_list: a list of paths descriptions
+        [
+        {'l': [(x1, y1),(x2, y2)]},
+        {'c': [ (x_ctrl_pt1, y_ctrl_pt1), (x_ctrl_pt2, y_ctrl_pt2), (x_end_pt, y_end_pt) ]},
+        {'a': [ (radiusx, radiusy), (0, 0), (x_end_pt, y_end_pt) ]} 
+         ]
+        :return: the svg string path
+        """
+        arr = path_description_list
+        path = '%s %s' % (arr[0][0], arr[0][1])
+        for dic in arr[1:]:
+            for descr, pt_list in dic.items():
+                path += ' %s ' % descr
+                path+= ' '.join([','.join([str(c) for c in pt] if type(pt) is tuple else str(pt)) for pt in pt_list])
+
+        d = "m %s%s" % (path, " z" if close else "")
+        # inkex.errormsg(d)
+        shape_attribs = {
+            'style': simplestyle.formatStyle(style),
+            'd': d
+        }
+        inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape_attribs)
+
     # ------------------------------------------------------------ #
     #                            MAIN
     # ------------------------------------------------------------ #
@@ -318,9 +349,10 @@ class Patron(inkex.Effect):
                                               'transform': '' if front else 'matrix(-1,0,0,1,-34.745039,0)'})
 
         # The template main vertexes absolute positions
+        neck_drop = um['neck_rear'] if not front else um['neck_front'] if um['neck_front'] > 0 else um['neck']
         vertexes = {
             'neck': (um['neck'], 0),
-            'neck_drop': (0, um['neck_front'] if um['neck_front'] > 0 else um['neck'] if front else um['neck_rear']),
+            'neck_drop': (0, neck_drop),
             'shoulder': (um['shoulder'], um['shoulder_drop']),
             'chest': (um['chest'], um['hsp_chest']),
             'waist': (um['waist'], um['hsp_waist']),
@@ -332,51 +364,74 @@ class Patron(inkex.Effect):
             line_style = self.normal_line if self.options.style == 'print' else self.cut_line
             edge = inkex.etree.SubElement(piece_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
 
-            neck_drop = um['neck_front'] if um['neck_front'] > 0 else um['neck'] if front else um['neck_rear']
-            draw_svg_ellipse((um['neck'], neck_drop), (0, 0), edge, line_style, (0, pi / 2))
-            draw_svg_line([(0, neck_drop), (0, um['hsp_hip'] - neck_drop)], edge, line_style)
-            draw_svg_line([vertexes['neck'], (um['shoulder'] - um['neck'], um['shoulder_drop'])], edge, line_style)
+            paths = [vertexes['neck_drop']]
+            paths.append(self.neckline(um, neck_drop))
+            paths.append(self.shoulder_line(um))
+            paths.append(self.sleeve_curve(um))
+            paths.append(self.waist_curve(um))
+            paths.append({'l': [(-um['hip'], 0)]})
 
-            curve_start = vertexes['shoulder']
-            control_point1 = (-self.getunittouu('30mm'), um['shoulder_to_chest'] / 2)
-            control_point2 = (-self.getunittouu('30mm'), um['shoulder_to_chest'])
-            curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
-            draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, line_style)
+            self.draw_svg_path(paths, edge, line_style)
 
-            curve_start = vertexes['chest']
-            control_point1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
-            control_point2 = (-(um['chest'] - um['hip']), 0.75 * um['chest_to_hip'])
-            curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
-            draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, line_style)
+            # draw_svg_ellipse(vertexes['neck_drop'],(um['neck'], neck_drop), (0, 0), (um['neck'], -neck_drop), edge, line_style)
+            # draw_svg_line([(0, neck_drop), (0, um['hsp_hip'] - neck_drop)], edge, line_style)
+            # draw_svg_line([vertexes['neck'], (um['shoulder'] - um['neck'], um['shoulder_drop'])], edge, line_style)
 
-            draw_svg_line([vertexes['hip'], (-um['hip'], 0)], edge, line_style)
+            # curve_start = vertexes['shoulder']
+            # control_point1 = (-self.getunittouu('30mm'), um['shoulder_to_chest'] / 2)
+            # control_point2 = (-self.getunittouu('30mm'), um['shoulder_to_chest'])
+            # curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
+            # draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, line_style)
+
+            # curve_start = vertexes['chest']
+            # control_point1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
+            # control_point2 = (-(um['chest'] - um['hip']), 0.75 * um['chest_to_hip'])
+            # curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
+            # draw_svg_cubic_curve(curve_start, control_point1, control_point2, curve_end, edge, line_style)
+
+            # draw_svg_line([vertexes['hip'], (-um['hip'], 0)], edge, line_style)
 
         # The Template structure reference
         if self.options.grid:
-            Reference = inkex.etree.SubElement(piece_group, 'g',
+            reference = inkex.etree.SubElement(piece_group, 'g',
                                                {inkex.addNS('label', 'inkscape'): info + "_structure"})
 
-            draw_svg_line([(0, 0), (0, um['hsp_hip'])], Reference, self.doted_line)
-            draw_svg_line([(0, 0), (um['neck'], 0)], Reference, self.doted_line)
-            draw_svg_line([(um['neck'], 0), (0, um['hsp_hip'])], Reference, self.doted_line)
-            draw_svg_line([(0, um['shoulder_drop']), (um['shoulder'], 0)], Reference, self.doted_line)
-            draw_svg_line([(0, um['hsp_chest']), (um['chest'], 0)], Reference, self.doted_line)
-            draw_svg_line([(0, um['hsp_waist']), (um['waist'], 0)], Reference, self.doted_line)
-            draw_svg_line([(0, um['hsp_hip']), (um['hip'], 0)], Reference, self.doted_line)
+            draw_svg_line([(0, 0), (0, um['hsp_hip'])], reference, self.doted_line)
+            draw_svg_line([(0, 0), (um['neck'], 0)], reference, self.doted_line)
+            draw_svg_line([(um['neck'], 0), (0, um['hsp_hip'])], reference, self.doted_line)
+            draw_svg_line([(0, um['shoulder_drop']), (um['shoulder'], 0)], reference, self.doted_line)
+            draw_svg_line([(0, um['hsp_chest']), (um['chest'], 0)], reference, self.doted_line)
+            draw_svg_line([(0, um['hsp_waist']), (um['waist'], 0)], reference, self.doted_line)
+            draw_svg_line([(0, um['hsp_hip']), (um['hip'], 0)], reference, self.doted_line)
 
             for name, vertex in vertexes.items():
-                draw_svg_ellipse((4, 4), (vertex[0], vertex[1]), Reference, self.normal_line)
+                draw_svg_circle(4, vertex, reference, self.normal_line)
         """
-        d = node.get('d')
-                    inkex.errormsg('Size of d element:%d' % len(d))
-                    parent = self.current_layer
-                    s = {'stroke':'#000000', 'stroke-width':'1', 'fill':'none', 'stroke-opacity':'1'}
                     attr = {'style':simplestyle.formatStyle(s),
                        inkex.addNS('type','sodipodi'):   'inkscape:offset',
                        inkex.addNS('radius','inkscape'):   '5',
                        inkex.addNS('original','inkscape'):   d
                     }
         """
+
+    def neckline(self, um, neckdrop):
+        return {'a': [(um['neck'], neckdrop), 0, 0, 0, (um['neck'], -neckdrop)]}
+
+    def shoulder_line(self, um):
+        return {'l': [(um['shoulder'] - um['neck'], um['shoulder_drop'])]}
+
+    def sleeve_curve(self, um):
+        ctrl_p1 = (-self.getunittouu('30mm'), um['shoulder_to_chest'] / 2)
+        ctrl_p2 = (-self.getunittouu('30mm'), um['shoulder_to_chest'])
+        curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
+        return {'c': [ctrl_p1, ctrl_p2, curve_end]}
+
+    def waist_curve(self, um):
+        ctrl_p1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
+        ctrl_p2 = (-(um['chest'] - um['hip']), 0.75 * um['chest_to_hip'])
+        curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
+        return {'c': [ctrl_p1, ctrl_p2, curve_end]}
+
     # ---------------------------------------------------------------------- #
     #                        RENDER SAVED TEMPLATES
     # ---------------------------------------------------------------------- #
