@@ -36,6 +36,7 @@ import xml.etree.ElementTree as Etree
 
 import inkex
 import simplestyle
+import simplepath
 
 __version__ = '1'
 
@@ -130,39 +131,6 @@ def draw_svg_cubic_curve(curve_start, pt1, pt2, curve_end, parent, style, transf
 
 def to_path_string(arr, close=True):
     return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), " z" if close else "")
-
-
-def draw_svg_path(path_description_list, parent, style, close=True):
-    """
-    Convert a list of paths descriptions to an svg string path
-    then draw the path under parent node .
-    a path description is a dictionary <"path type", [(pt1)]>
-    :param path_description_list: a list of paths descriptions
-    [
-    {'l': [(x1, y1),(x2, y2)]},
-    {'c': [ (x_ctrl_pt1, y_ctrl_pt1), (x_ctrl_pt2, y_ctrl_pt2), (x_end_pt, y_end_pt) ]},
-    {'a': [ (radiusx, radiusy), (0, 0), (x_end_pt, y_end_pt) ]} 
-     ]
-    :param parent: 
-    :param style: 
-    :param close: 
-    :return: the svg string path 
-    """
-    arr = path_description_list
-    path = '%s %s' % (arr[0][0], arr[0][1])
-    for dic in arr[1:]:
-        for descr, pt_list in dic.items():
-            path += ' %s ' % descr
-            path += ' '.join([','.join([str(c) for c in pt] if type(pt) is tuple else str(pt)) for pt in pt_list])
-
-    d = "m %s%s" % (path, " z" if close else "")
-    # inkex.errormsg(d)
-    shape_attribs = {
-        'style': simplestyle.formatStyle(style),
-        'd': d
-    }
-    inkex.etree.SubElement(parent, inkex.addNS('path', 'svg'), shape_attribs)
-    return d
 
 
 def points_to_bbox(p):
@@ -280,24 +248,28 @@ class Patron(inkex.Effect):
     # ----------------------------------------------------------------#
     @staticmethod
     def neckline(um, neckdrop):
-        return {'a': [(um['neck'], neckdrop), 0, 0, 0, (um['neck'], -neckdrop)]}
+        return ' c {},{} {},{} {},{}'.format(0.5 * um['neck'], 0, um['neck'], -0.6 * neckdrop, um['neck'], -neckdrop)
+
+    @staticmethod
+    def hipline(um):
+        return ' l {},{} z'.format(-um['hip'], 0)
 
     @staticmethod
     def shoulder_line(um):
-        return {'l': [(um['shoulder'] - um['neck'], um['shoulder_drop'])]}
+        return ' l {},{}'.format(um['shoulder'] - um['neck'], um['shoulder_drop'])
 
     @staticmethod
     def waist_curve(um):
         ctrl_p1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
         ctrl_p2 = (-(um['chest'] - um['hip']), 0.60 * um['chest_to_hip'])
         curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
-        return {'c': [ctrl_p1, ctrl_p2, curve_end]}
+        return ' c {},{} {},{} {},{}'.format(ctrl_p1[0], ctrl_p1[1], ctrl_p2[0], ctrl_p2[1], curve_end[0], curve_end[1])
 
     def sleeve_curve(self, um):
-        ctrl_p1 = (-self.getunittouu('3'+self.options.units), um['shoulder_to_chest'] / 2)
-        ctrl_p2 = (-self.getunittouu('3'+self.options.units), um['shoulder_to_chest'])
+        ctrl_p1 = (-self.getunittouu('3cm'), um['shoulder_to_chest'] / 2)
+        ctrl_p2 = (-self.getunittouu('3cm'), um['shoulder_to_chest'])
         curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
-        return {'c': [ctrl_p1, ctrl_p2, curve_end]}
+        return ' c {},{} {},{} {},{}'.format(ctrl_p1[0], ctrl_p1[1], ctrl_p2[0], ctrl_p2[1], curve_end[0], curve_end[1])
 
     def getunittouu(self, param):
         """for 0.48 and 0.91 compatibility"""
@@ -390,16 +362,32 @@ class Patron(inkex.Effect):
             line_style = self.normal_line if self.options.style == 'print' else self.cut_line
             edge = inkex.etree.SubElement(piece_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
 
-            path = [
-                vertexes['neck_drop'],
-                Patron.neckline(um, neck_drop),
-                Patron.shoulder_line(um),
-                self.sleeve_curve(um),
-                Patron.waist_curve(um),
-                {'l': [(-um['hip'], 0)]}
-            ]
+            # Building the path string description 'd'
+            path = 'm {},{}'.format(vertexes['neck_drop'][0], vertexes['neck_drop'][1])
+            path += Patron.neckline(um, neck_drop)
+            path += Patron.shoulder_line(um)
+            path += self.sleeve_curve(um)
+            path += Patron.waist_curve(um)
+            path += Patron.hipline(um)
 
-            draw_svg_path(path, edge, line_style)
+            sewing_attribs = {
+                'style': simplestyle.formatStyle(self.normal_line),
+                inkex.addNS('label', 'inkscape'): info + '_sewing',
+                'd': path}
+            inkex.etree.SubElement(edge, inkex.addNS('path', 'svg'), sewing_attribs)
+            for arr in simplepath.parsePath(path):
+                inkex.debug(arr)
+            abs=''
+            for seg in simplepath.parsePath(path):
+                abs += ' %s ' % seg[0]+' '.join([str(c) for c in seg[1]])
+            inkex.debug(abs)
+
+            offset_attribs = {'style': simplestyle.formatStyle(line_style),
+                              inkex.addNS('type', 'sodipodi'): 'inkscape:offset',
+                              inkex.addNS('radius', 'inkscape'): str(self.getunittouu('1cm')),
+                              inkex.addNS('original', 'inkscape'): path
+                              }
+            inkex.etree.SubElement(edge, inkex.addNS('path', 'svg'), offset_attribs)
 
         # The Template structure reference
         if self.options.grid:
@@ -415,14 +403,7 @@ class Patron(inkex.Effect):
             draw_svg_line([(0, um['hsp_hip']), (um['hip'], 0)], reference, self.doted_line)
 
             for name, vertex in vertexes.items():
-                draw_svg_circle(self.getunittouu('0.4'+self.options.units), vertex, reference, self.normal_line)
-        """
-                    attr = {'style':simplestyle.formatStyle(s),
-                       inkex.addNS('type','sodipodi'):   'inkscape:offset',
-                       inkex.addNS('radius','inkscape'):   '5',
-                       inkex.addNS('original','inkscape'):   d
-                    }
-        """
+                draw_svg_circle(self.getunittouu('0.4' + self.options.units), vertex, reference, self.normal_line)
 
     # ---------------------------------------------------------------------- #
     #                        RENDER SAVED TEMPLATES
