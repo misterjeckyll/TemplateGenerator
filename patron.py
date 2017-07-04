@@ -240,33 +240,33 @@ class Patron(inkex.Effect):
                                      help="User interface units")
         self.OptionParser.add_option("--style", type="string", dest="style", default='print',
                                      help="Style of the template")
-        self.OptionParser.add_option("-n", "--neck", type="float", dest="neck", default=88,
+        self.OptionParser.add_option("-n", "--neck", type="float", dest="neck", default=11,
                                      help="Width of the neck")
-        self.OptionParser.add_option("-s", "--shoulder", type="float", dest="shoulder", default=88,
+        self.OptionParser.add_option("-s", "--shoulder", type="float", dest="shoulder", default=44,
                                      help="Width shoulder to shoulder")
-        self.OptionParser.add_option("--hip", type="float", dest="hip", default=88,
+        self.OptionParser.add_option("--hip", type="float", dest="hip", default=89,
                                      help="Hip measurement")
-        self.OptionParser.add_option("-w", "--waist", type="float", dest="waist", default=64,
+        self.OptionParser.add_option("-w", "--waist", type="float", dest="waist", default=79,
                                      help="Waist measurement")
-        self.OptionParser.add_option("-c", "--chest", type="float", dest="chest", default=80,
+        self.OptionParser.add_option("-c", "--chest", type="float", dest="chest", default=97,
                                      help="Chest measurement")
-        self.OptionParser.add_option("--hsptochest", type="float", dest="hsp_chest", default=80,
+        self.OptionParser.add_option("--hsptochest", type="float", dest="hsp_chest", default=21,
                                      help="Lenght HSP to chest")
-        self.OptionParser.add_option("--hsptowaist", type="float", dest="hsp_waist", default=80,
+        self.OptionParser.add_option("--hsptowaist", type="float", dest="hsp_waist", default=45,
                                      help="Lenght HSP to waist")
-        self.OptionParser.add_option("--hsptohip", type="float", dest="hsp_hip", default=80,
+        self.OptionParser.add_option("--hsptohip", type="float", dest="hsp_hip", default=67,
                                      help="Lenght HSP to hip")
         self.OptionParser.add_option("-b", "--bicep", type="float", dest="bicep", default=23,
                                      help="Bicep measurement")
         self.OptionParser.add_option("-m", "--sleeve", type="float", dest="sleeve", default=23,
                                      help="Lenght of the sleeve")
-        self.OptionParser.add_option("-e", "--ease", type="float", dest="ease", default=3,
+        self.OptionParser.add_option("-e", "--ease", type="float", dest="ease", default=5,
                                      help="Amount of ease")
         self.OptionParser.add_option("--neck_front", type="float", dest="neck_front", default=0,
                                      help="Height of the front neck drop")
-        self.OptionParser.add_option("--neck_rear", type="float", dest="neck_rear", default=0,
+        self.OptionParser.add_option("--neck_rear", type="float", dest="neck_rear", default=6,
                                      help="Height of the rear neck drop")
-        self.OptionParser.add_option("-p", "--shoulder_drop", type="float", dest="shoulder_drop", default=1.5,
+        self.OptionParser.add_option("-p", "--shoulder_drop", type="float", dest="shoulder_drop", default=3,
                                      help="height of the shoulder")
         self.OptionParser.add_option("-g", "--grid", type="inkbool", dest="grid", default=True,
                                      help="Display the Reference Grid ")
@@ -278,6 +278,27 @@ class Patron(inkex.Effect):
     # ----------------------------------------------------------------#
     #                       UTILITY METHODS
     # ----------------------------------------------------------------#
+    @staticmethod
+    def neckline(um, neckdrop):
+        return {'a': [(um['neck'], neckdrop), 0, 0, 0, (um['neck'], -neckdrop)]}
+
+    @staticmethod
+    def shoulder_line(um):
+        return {'l': [(um['shoulder'] - um['neck'], um['shoulder_drop'])]}
+
+    @staticmethod
+    def waist_curve(um):
+        ctrl_p1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
+        ctrl_p2 = (-(um['chest'] - um['hip']), 0.60 * um['chest_to_hip'])
+        curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
+        return {'c': [ctrl_p1, ctrl_p2, curve_end]}
+
+    def sleeve_curve(self, um):
+        ctrl_p1 = (-self.getunittouu('3'+self.options.units), um['shoulder_to_chest'] / 2)
+        ctrl_p2 = (-self.getunittouu('3'+self.options.units), um['shoulder_to_chest'])
+        curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
+        return {'c': [ctrl_p1, ctrl_p2, curve_end]}
+
     def getunittouu(self, param):
         """for 0.48 and 0.91 compatibility"""
         if type(param) is tuple:
@@ -343,11 +364,11 @@ class Patron(inkex.Effect):
             self.main_piece(template_group, user, info + '_back', False)
 
     # -------------------------------------------------------------- #
-    #                          FRONT PIECE
+    #                          MAIN PIECE
     # -------------------------------------------------------------- #
     def main_piece(self, parent, um, info="T-shirt_Template", front=True):
         """
-        Render the front piece of the template
+        Render the main piece of the template
         """
         piece_group = inkex.etree.SubElement(parent, 'g',
                                              {inkex.addNS('label', 'inkscape'): info,
@@ -373,7 +394,7 @@ class Patron(inkex.Effect):
                 vertexes['neck_drop'],
                 Patron.neckline(um, neck_drop),
                 Patron.shoulder_line(um),
-                Patron.sleeve_curve(um),
+                self.sleeve_curve(um),
                 Patron.waist_curve(um),
                 {'l': [(-um['hip'], 0)]}
             ]
@@ -394,7 +415,7 @@ class Patron(inkex.Effect):
             draw_svg_line([(0, um['hsp_hip']), (um['hip'], 0)], reference, self.doted_line)
 
             for name, vertex in vertexes.items():
-                draw_svg_circle(4, vertex, reference, self.normal_line)
+                draw_svg_circle(self.getunittouu('0.4'+self.options.units), vertex, reference, self.normal_line)
         """
                     attr = {'style':simplestyle.formatStyle(s),
                        inkex.addNS('type','sodipodi'):   'inkscape:offset',
@@ -402,28 +423,6 @@ class Patron(inkex.Effect):
                        inkex.addNS('original','inkscape'):   d
                     }
         """
-
-    @staticmethod
-    def neckline(um, neckdrop):
-        return {'a': [(um['neck'], neckdrop), 0, 0, 0, (um['neck'], -neckdrop)]}
-
-    @staticmethod
-    def shoulder_line(um):
-        return {'l': [(um['shoulder'] - um['neck'], um['shoulder_drop'])]}
-
-    @staticmethod
-    def sleeve_curve(um):
-        ctrl_p1 = (-self.getunittouu('30mm'), um['shoulder_to_chest'] / 2)
-        ctrl_p2 = (-self.getunittouu('30mm'), um['shoulder_to_chest'])
-        curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
-        return {'c': [ctrl_p1, ctrl_p2, curve_end]}
-
-    @staticmethod
-    def waist_curve(um):
-        ctrl_p1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
-        ctrl_p2 = (-(um['chest'] - um['hip']), 0.75 * um['chest_to_hip'])
-        curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
-        return {'c': [ctrl_p1, ctrl_p2, curve_end]}
 
     # ---------------------------------------------------------------------- #
     #                        RENDER SAVED TEMPLATES
