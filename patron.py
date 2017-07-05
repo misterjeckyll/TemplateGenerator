@@ -375,19 +375,18 @@ class Patron(inkex.Effect):
                 inkex.addNS('label', 'inkscape'): info + '_sewing',
                 'd': path}
             inkex.etree.SubElement(edge, inkex.addNS('path', 'svg'), sewing_attribs)
-            for arr in simplepath.parsePath(path):
-                inkex.debug(arr)
+            """
             abs=''
             for seg in simplepath.parsePath(path):
                 abs += ' %s ' % seg[0]+' '.join([str(c) for c in seg[1]])
-            inkex.debug(abs)
 
             offset_attribs = {'style': simplestyle.formatStyle(line_style),
                               inkex.addNS('type', 'sodipodi'): 'inkscape:offset',
                               inkex.addNS('radius', 'inkscape'): str(self.getunittouu('1cm')),
-                              inkex.addNS('original', 'inkscape'): path
+                              inkex.addNS('original', 'inkscape'): abs
                               }
             inkex.etree.SubElement(edge, inkex.addNS('path', 'svg'), offset_attribs)
+            """
 
         # The Template structure reference
         if self.options.grid:
