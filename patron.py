@@ -226,19 +226,21 @@ class Patron(inkex.Effect):
                                      help="Lenght HSP to hip")
         self.OptionParser.add_option("-b", "--bicep", type="float", dest="bicep", default=23,
                                      help="Bicep measurement")
-        self.OptionParser.add_option("-m", "--sleeve", type="float", dest="sleeve", default=23,
-                                     help="Lenght of the sleeve")
+        self.OptionParser.add_option("--upersleeve", type="float", dest="top_sleeve", default=20,
+                                     help="Top lenght of the sleeve")
+        self.OptionParser.add_option("--bottomsleeve", type="float", dest="bottom_sleeve", default=17,
+                                     help="Bottom lenght of the sleeve")
         self.OptionParser.add_option("-e", "--ease", type="float", dest="ease", default=5,
                                      help="Amount of ease")
         self.OptionParser.add_option("--neck_front", type="float", dest="neck_front", default=0,
                                      help="Height of the front neck drop")
         self.OptionParser.add_option("--neck_rear", type="float", dest="neck_rear", default=6,
                                      help="Height of the rear neck drop")
-        self.OptionParser.add_option("-p", "--shoulder_drop", type="float", dest="shoulder_drop", default=3,
+        self.OptionParser.add_option("--shoulder_drop", type="float", dest="shoulder_drop", default=3,
                                      help="height of the shoulder")
-        self.OptionParser.add_option("-g", "--grid", type="inkbool", dest="grid", default=True,
+        self.OptionParser.add_option("--grid", type="inkbool", dest="grid", default=True,
                                      help="Display the Reference Grid ")
-        self.OptionParser.add_option("-v", "--temp", type="inkbool", dest="temp", default=True,
+        self.OptionParser.add_option("--temp", type="inkbool", dest="temp", default=True,
                                      help="Display the template")
         self.OptionParser.add_option("--active-tab", type="string", dest="active_tab",
                                      default='title', help="Active tab.")
@@ -295,11 +297,6 @@ class Patron(inkex.Effect):
     #                            MAIN
     # ------------------------------------------------------------ #
     def effect(self):
-        # Get Document attribs
-        root = self.document.getroot()  # top node in document tree
-        docwidth = self.getunittouu(root.get('width'))
-        docheight = self.getunittouu(root.get('height'))
-        self.doc_center = docwidth / 2, docheight / 2
 
         # Render Saved Template
         template_id = self.options.type
@@ -322,7 +319,8 @@ class Patron(inkex.Effect):
                 'hsp_waist': self.getunittouu(str(self.options.hsp_waist) + self.options.units),
                 'hsp_hip': self.getunittouu(str(self.options.hsp_hip) + self.options.units),
                 'bicep': (ease + float(self.getunittouu(str(self.options.bicep) + self.options.units))) / 2,
-                'sleeve': self.getunittouu(str(self.options.sleeve) + self.options.units)
+                'top_sleeve': self.getunittouu(str(self.options.top_sleeve) + self.options.units),
+                'under_sleeve': self.getunittouu(str(self.options.bottom_sleeve) + self.options.units)-self.getunittouu('2cm')
             }
             user['shoulder_to_chest'] = user['hsp_chest'] - user['shoulder_drop']
             user['chest_to_waist'] = user['hsp_waist'] - user['hsp_chest']
@@ -334,11 +332,12 @@ class Patron(inkex.Effect):
 
             self.main_piece(template_group, user, info + '_front', True)
             self.main_piece(template_group, user, info + '_back', False)
+            self.sleeve(template_group, user, info+'_sleeve')
 
     # -------------------------------------------------------------- #
     #                          MAIN PIECE
     # -------------------------------------------------------------- #
-    def main_piece(self, parent, um, info="T-shirt_Template", front=True):
+    def main_piece(self, parent, um, info="Patron de T-shirt", front=True):
         """
         Render the main piece of the template
         """
@@ -401,8 +400,33 @@ class Patron(inkex.Effect):
             draw_svg_line([(0, um['hsp_waist']), (um['waist'], 0)], reference, self.doted_line)
             draw_svg_line([(0, um['hsp_hip']), (um['hip'], 0)], reference, self.doted_line)
 
+            for name,vertex in vertexes.items():
+                draw_svg_circle(self.getunittouu('4mm'), vertex, reference, self.normal_line)
+
+    # -------------------------------------------------------------- #
+    #                          SLEEVE PIECE
+    # -------------------------------------------------------------- #
+    def sleeve(self, parent, um, info = "Patron de T-shirt"):
+        """
+            Render the sleeve piece of the template
+        """
+        sleeve_attribs = {inkex.addNS('label', 'inkscape'): info,'transform': 'translate(-100,-200)'}
+        piece_group = inkex.etree.SubElement(parent, 'g', sleeve_attribs)
+
+        # The template main vertexes absolute positions
+        vertexes = {
+            'shoulder': (0, 0),
+            'sleeve_middle': (0, um['top_sleeve']-um['under_sleeve']),
+            'armpit': (um['bicep'], um['top_sleeve'] - um['under_sleeve']),
+            'sleeve_top': (0, um['top_sleeve']),
+            'sleeve_bottom': (um['bicep']-0.5*um['ease'],um['top_sleeve']),
+        }
+        if self.options.grid:
+            reference = inkex.etree.SubElement(piece_group, 'g',{inkex.addNS('label', 'inkscape'): info + "_structure"})
+            draw_svg_line([vertexes['shoulder'],(0, um['top_sleeve']),(um['bicep']-0.5*um['ease'],0)], reference, self.doted_line)
+            draw_svg_line([vertexes['sleeve_middle'], (um['bicep'],0)], reference, self.doted_line)
             for name, vertex in vertexes.items():
-                draw_svg_circle(self.getunittouu('0.4' + self.options.units), vertex, reference, self.normal_line)
+                draw_svg_circle(self.getunittouu('4mm'), vertex, reference, self.normal_line)
 
     # ---------------------------------------------------------------------- #
     #                        RENDER SAVED TEMPLATES
