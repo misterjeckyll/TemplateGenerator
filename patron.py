@@ -36,7 +36,6 @@ import xml.etree.ElementTree as Etree
 
 import inkex
 import simplestyle
-import simplepath
 
 __version__ = '1'
 
@@ -131,6 +130,11 @@ def draw_svg_cubic_curve(curve_start, pt1, pt2, curve_end, parent, style, transf
 
 def to_path_string(arr, close=True):
     return "m %s%s" % (' '.join([','.join([str(c) for c in pt]) for pt in arr]), " z" if close else "")
+
+
+def formatPath(a):
+    """Format SVG path data from an array"""
+    return "".join([" %s " % cmd + " ".join([str(p) for p in params]) for cmd, params in a])
 
 
 def points_to_bbox(p):
@@ -249,29 +253,29 @@ class Patron(inkex.Effect):
     #                       UTILITY METHODS
     # ----------------------------------------------------------------#
     @staticmethod
-    def neckline(um, neckdrop):
-        return ' c {},{} {},{} {},{}'.format(0.5 * um['neck'], 0, um['neck'], -0.6 * neckdrop, um['neck'], -neckdrop)
+    def neckline(um, neck_drop):
+        return ['c', [0, 0.6 * neck_drop, -0.5 * um['neck'], neck_drop, -um['neck'], neck_drop]]
 
     @staticmethod
     def hipline(um):
-        return ' l {},{} z'.format(-um['hip'], 0)
+        return 'l {},{} z'.format(-um['hip'], 0)
 
     @staticmethod
     def shoulder_line(um):
-        return ' l {},{}'.format(um['shoulder'] - um['neck'], um['shoulder_drop'])
+        return 'l {},{}'.format(um['shoulder'] - um['neck'], um['shoulder_drop'])
 
     @staticmethod
     def waist_curve(um):
-        ctrl_p1 = (-(um['chest'] - um['waist']), um['chest_to_waist'])
-        ctrl_p2 = (-(um['chest'] - um['hip']), 0.60 * um['chest_to_hip'])
-        curve_end = (-um['chest'] + um['hip'], um['chest_to_hip'])
-        return ' c {},{} {},{} {},{}'.format(ctrl_p1[0], ctrl_p1[1], ctrl_p2[0], ctrl_p2[1], curve_end[0], curve_end[1])
+        ctrl_p1 = (0, -0.4 * um['chest_to_waist'])
+        ctrl_p2 = (-(um['hip'] - um['waist']), -um['waist_to_hip'])
+        curve_end = (um['chest'] - um['hip'], -um['chest_to_hip'])
+        return ['c', [ctrl_p1[0], ctrl_p1[1], ctrl_p2[0], ctrl_p2[1], curve_end[0], curve_end[1]]]
 
     def sleeve_curve(self, um):
-        ctrl_p1 = (-self.getunittouu('3cm'), um['shoulder_to_chest'] / 2)
-        ctrl_p2 = (-self.getunittouu('3cm'), um['shoulder_to_chest'])
-        curve_end = (-um['shoulder'] + um['chest'], um['hsp_chest'] - um['shoulder_drop'])
-        return ' c {},{} {},{} {},{}'.format(ctrl_p1[0], ctrl_p1[1], ctrl_p2[0], ctrl_p2[1], curve_end[0], curve_end[1])
+        ctrl_p1 = (-self.getunittouu('5cm'), 0)
+        ctrl_p2 = (-self.getunittouu('5cm'), -um['shoulder_to_chest'] / 2)
+        curve_end = (um['shoulder'] - um['chest'], -(um['hsp_chest'] - um['shoulder_drop']))
+        return ['c', [ctrl_p1[0], ctrl_p1[1], ctrl_p2[0], ctrl_p2[1], curve_end[0], curve_end[1]]]
 
     def getunittouu(self, param):
         """for 0.48 and 0.91 compatibility"""
@@ -325,6 +329,7 @@ class Patron(inkex.Effect):
             user['shoulder_to_chest'] = user['hsp_chest'] - user['shoulder_drop']
             user['chest_to_waist'] = user['hsp_waist'] - user['hsp_chest']
             user['chest_to_hip'] = user['hsp_hip'] - user['hsp_chest']
+            user['waist_to_hip'] = user['hsp_hip'] - user['hsp_waist']
 
             # Main group for the Template
             info = 'Patron_T-shirt_%s_%s_%s' % (self.options.hip, self.options.waist, self.options.chest)
@@ -356,37 +361,6 @@ class Patron(inkex.Effect):
             'hip': (um['hip'], um['hsp_hip'])
         }
 
-        # Template edge paths
-        if self.options.temp:
-            line_style = self.normal_line if self.options.style == 'print' else self.cut_line
-            edge = inkex.etree.SubElement(piece_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
-
-            # Building the path string description 'd'
-            path = 'm {},{}'.format(vertexes['neck_drop'][0], vertexes['neck_drop'][1])
-            path += Patron.neckline(um, neck_drop)
-            path += Patron.shoulder_line(um)
-            path += self.sleeve_curve(um)
-            path += Patron.waist_curve(um)
-            path += Patron.hipline(um)
-
-            sewing_attribs = {
-                'style': simplestyle.formatStyle(self.normal_line),
-                inkex.addNS('label', 'inkscape'): info + '_sewing',
-                'd': path}
-            inkex.etree.SubElement(edge, inkex.addNS('path', 'svg'), sewing_attribs)
-            """
-            abs=''
-            for seg in simplepath.parsePath(path):
-                abs += ' %s ' % seg[0]+' '.join([str(c) for c in seg[1]])
-
-            offset_attribs = {'style': simplestyle.formatStyle(line_style),
-                              inkex.addNS('type', 'sodipodi'): 'inkscape:offset',
-                              inkex.addNS('radius', 'inkscape'): str(self.getunittouu('1cm')),
-                              inkex.addNS('original', 'inkscape'): abs
-                              }
-            inkex.etree.SubElement(edge, inkex.addNS('path', 'svg'), offset_attribs)
-            """
-
         # The Template structure reference
         if self.options.grid:
             reference = inkex.etree.SubElement(piece_group, 'g',
@@ -400,8 +374,38 @@ class Patron(inkex.Effect):
             draw_svg_line([(0, um['hsp_waist']), (um['waist'], 0)], reference, self.doted_line)
             draw_svg_line([(0, um['hsp_hip']), (um['hip'], 0)], reference, self.doted_line)
 
-            for name,vertex in vertexes.items():
+            for name, vertex in vertexes.items():
                 draw_svg_circle(self.getunittouu('4mm'), vertex, reference, self.normal_line)
+
+        # Template edge paths
+        if self.options.temp:
+
+            line_style = self.normal_line if self.options.style == 'print' else self.cut_line
+            edge = inkex.etree.SubElement(piece_group, 'g', {inkex.addNS('label', 'inkscape'): info + "_edge"})
+
+            # Building the path string description 'd'
+            path = [['m', vertexes['neck']]]
+            path.append(Patron.neckline(um, neck_drop))
+            path.append(['l', [0, um['hsp_hip'] - neck_drop]])
+            path.append(['l', [um['hip'], 0]])
+            path.append(Patron.waist_curve(um))
+            path.append(self.sleeve_curve(um))
+            path.append(['Z', []])
+
+            sewing_attribs = {
+                'style': simplestyle.formatStyle(self.normal_line),
+                inkex.addNS('label', 'inkscape'): info + '_sewing',
+                'd': formatPath(path)}
+            inkex.etree.SubElement(edge, inkex.addNS('path', 'svg'), sewing_attribs)
+
+            path[2][1] = [0, um['hsp_hip'] + self.getunittouu('1.5cm') - neck_drop]
+            path[3][1] = [um['hip'], 0, 0, -self.getunittouu('1.5cm')]
+            offset_attribs = {'style': simplestyle.formatStyle(line_style),
+                              inkex.addNS('type', 'sodipodi'): 'inkscape:offset',
+                              inkex.addNS('radius', 'inkscape'): str(self.getunittouu('1cm')),
+                              inkex.addNS('original', 'inkscape'): formatPath(path)
+                              }
+            inkex.etree.SubElement(edge, inkex.addNS('path', 'svg'), offset_attribs)
 
     # -------------------------------------------------------------- #
     #                          SLEEVE PIECE
